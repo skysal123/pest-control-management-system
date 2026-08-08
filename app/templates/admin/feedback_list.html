@@ -1,0 +1,23 @@
+{% extends "admin/_layout.html" %}
+
+{% block admin_content %}
+<h2 class="mb-4">Customer Feedback</h2>
+
+{% for f in feedback %}
+<div class="os-card p-3 mb-2">
+  <div class="d-flex justify-content-between">
+    <div>
+      <strong>{{ f.customer.name }}</strong>
+      <span class="text-muted small ms-2">Booking #{{ f.booking_id }} · {{ f.service.name if f.technician else '' }}</span>
+    </div>
+    <div class="text-warning">
+      {% for i in range(f.rating) %}<i class="bi bi-star-fill"></i>{% endfor %}
+    </div>
+  </div>
+  <p class="mb-0 small mt-1">{{ f.comments or '(no comments)' }}</p>
+  <small class="text-muted">Tech: {{ f.technician.name if f.technician else '—' }} · {{ f.created_at.strftime('%d %b %Y') }}</small>
+</div>
+{% else %}
+<p class="text-muted">No feedback yet.</p>
+{% endfor %}
+{% endblock %}

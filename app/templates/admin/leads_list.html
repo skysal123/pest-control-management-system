@@ -1,0 +1,55 @@
+{% extends "admin/_layout.html" %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">Leads</h2>
+  <a href="{{ url_for('admin.lead_new') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> New Lead</a>
+</div>
+
+<form method="get" class="row g-2 mb-3">
+  <div class="col-md-4">
+    <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search name, phone, email...">
+  </div>
+  <div class="col-md-3">
+    <select name="source" class="form-select">
+      <option value="">All sources</option>
+      {% for src in ['Website','WhatsApp','Phone Call','Referral'] %}
+      <option value="{{ src }}" {% if source==src %}selected{% endif %}>{{ src }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <select name="status" class="form-select">
+      <option value="">All statuses</option>
+      {% for st in ['New','Contacted','Follow-up Required','Booking Created','Closed','Cancelled'] %}
+      <option value="{{ st }}" {% if status==st %}selected{% endif %}>{{ st }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2"><button class="btn btn-outline-primary w-100">Filter</button></div>
+</form>
+
+<div class="os-card p-0">
+  <table class="table os-table mb-0">
+    <thead><tr>
+      <th>#</th><th>Customer</th><th>Phone</th><th>Service</th><th>Source</th><th>Status</th><th>Created</th><th></th>
+    </tr></thead>
+    <tbody>
+      {% for l in leads %}
+      <tr>
+        <td>{{ l.id }}</td>
+        <td>{{ l.customer.name }}</td>
+        <td>{{ l.customer.phone }}</td>
+        <td>{{ l.service.name if l.service else '—' }}</td>
+        <td>{{ l.source }}</td>
+        <td><span class="pill {{ l.status|lower|replace(' ', '') }}">{{ l.status }}</span></td>
+        <td><small>{{ l.created_at.strftime('%d %b %Y') }}</small></td>
+        <td><a href="{{ url_for('admin.lead_detail', lead_id=l.id) }}" class="btn btn-sm btn-outline-primary">Open</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" class="text-center text-muted py-4">No leads found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

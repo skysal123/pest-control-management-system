@@ -1,0 +1,40 @@
+{% extends "admin/_layout.html" %}
+
+{% block admin_content %}
+<h2 class="mb-4">{{ 'Edit' if tech else 'Add' }} Technician</h2>
+
+<div class="os-card p-4">
+  <form method="post">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Name *</label>
+        <input type="text" name="name" class="form-control" required value="{{ tech.name if tech else '' }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Email *</label>
+        <input type="email" name="email" class="form-control" required value="{{ tech.email if tech else '' }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Phone</label>
+        <input type="tel" name="phone" class="form-control" value="{{ tech.phone if tech and tech.phone else '' }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Password {% if not tech %}*{% else %}(leave blank to keep){% endif %}</label>
+        <input type="password" name="password" class="form-control" {% if not tech %}required{% endif %}>
+      </div>
+      {% if tech %}
+      <div class="col-12">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="is_active" id="active" {% if tech.is_active %}checked{% endif %}>
+          <label class="form-check-label" for="active">Active</label>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    <div class="mt-4 d-flex gap-2">
+      <button class="btn btn-primary">Save</button>
+      <a href="{{ url_for('admin.technicians') }}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

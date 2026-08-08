@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Admin · {{ business_name }}{% endblock %}
+{% block fabs %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <aside class="col-md-3 col-lg-2 os-sidebar">
+      <h6>Admin</h6>
+      <a href="{{ url_for('admin.dashboard') }}" class="{% if request.endpoint=='admin.dashboard' %}active{% endif %}">
+        <i class="bi bi-speedometer2"></i> Dashboard
+      </a>
+      <a href="{{ url_for('admin.leads') }}" class="{% if 'lead' in request.endpoint|default('') %}active{% endif %}">
+        <i class="bi bi-inbox"></i> Leads
+      </a>
+      <a href="{{ url_for('admin.bookings') }}" class="{% if 'booking' in request.endpoint|default('') %}active{% endif %}">
+        <i class="bi bi-calendar-check"></i> Bookings
+      </a>
+      <a href="{{ url_for('admin.technicians') }}" class="{% if 'technician' in request.endpoint|default('') %}active{% endif %}">
+        <i class="bi bi-people"></i> Technicians
+      </a>
+      <a href="{{ url_for('admin.services') }}" class="{% if request.endpoint=='admin.services' %}active{% endif %}">
+        <i class="bi bi-grid"></i> Services
+      </a>
+      <a href="{{ url_for('admin.warranties') }}" class="{% if request.endpoint=='admin.warranties' %}active{% endif %}">
+        <i class="bi bi-shield-check"></i> Warranties
+      </a>
+      <a href="{{ url_for('admin.feedback') }}" class="{% if request.endpoint=='admin.feedback' %}active{% endif %}">
+        <i class="bi bi-star"></i> Feedback
+      </a>
+      <a href="{{ url_for('admin.notifications') }}" class="{% if request.endpoint=='admin.notifications' %}active{% endif %}">
+        <i class="bi bi-bell"></i> Notifications
+      </a>
+
+      <h6 class="mt-4">Site</h6>
+      <a href="{{ url_for('public.home') }}" target="_blank"><i class="bi bi-globe"></i> View Website</a>
+      <a href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+    </aside>
+
+    <main class="col-md-9 col-lg-10 py-4 px-md-5">
+      {% block admin_content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}

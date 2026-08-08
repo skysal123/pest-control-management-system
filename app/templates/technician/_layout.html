@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Technician · {{ business_name }}{% endblock %}
+{% block fabs %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <aside class="col-md-3 col-lg-2 os-sidebar">
+      <h6>Technician</h6>
+      <a href="{{ url_for('technician.dashboard') }}" class="{% if request.endpoint=='technician.dashboard' %}active{% endif %}">
+        <i class="bi bi-speedometer2"></i> Dashboard
+      </a>
+      <h6 class="mt-4">Site</h6>
+      <a href="{{ url_for('public.home') }}" target="_blank"><i class="bi bi-globe"></i> View Website</a>
+      <a href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+    </aside>
+
+    <main class="col-md-9 col-lg-10 py-4 px-md-5">
+      {% block tech_content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}

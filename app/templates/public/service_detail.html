@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% set svc_image = service.image or ('services/' ~ service.slug ~ '.webp') %}
+{% block title %}{{ service.name }} | {{ business_name }}{% endblock %}
+
+{% block content %}
+{% if svc_image %}
+<section class="os-service-hero" style="background-image: linear-gradient(rgba(7, 92, 62, 0.65), rgba(7, 92, 62, 0.75)), url('{{ url_for('static', filename=svc_image) }}');">
+  <div class="container">
+    <div class="icon-wrap mb-3"><i class="bi {{ service.icon or 'bi-bug-fill' }}"></i></div>
+    <h1>{{ service.name }}</h1>
+    <p class="lead mb-0 opacity-90">{{ service.short_description }}</p>
+  </div>
+</section>
+{% else %}
+<section class="os-hero" style="padding: 3rem 0;">
+  <div class="container">
+    <h1>{{ service.name }}</h1>
+    <p class="lead mb-0 opacity-75">{{ service.short_description }}</p>
+  </div>
+</section>
+{% endif %}
+
+<section class="os-section">
+  <div class="container">
+    <div class="row g-5">
+      <div class="col-lg-8">
+        <div class="os-card p-4 mb-4">
+          <h4>Overview</h4>
+          <p>{{ service.description }}</p>
+        </div>
+
+        {% if service.benefits %}
+        <div class="os-card p-4 mb-4">
+          <h4>Benefits</h4>
+          <p style="white-space: pre-line;">{{ service.benefits }}</p>
+        </div>
+        {% endif %}
+
+        {% if service.process %}
+        <div class="os-card p-4 mb-4">
+          <h4>Our Process</h4>
+          <p style="white-space: pre-line;">{{ service.process }}</p>
+        </div>
+        {% endif %}
+
+        {% if service.faq %}
+        <div class="os-card p-4">
+          <h4>Frequently Asked Questions</h4>
+          <div class="accordion" id="faqAcc">
+            {% for item in (service.faq_list or []) %}
+            <div class="accordion-item">
+              <h2 class="accordion-header">
+                <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#faq{{ loop.index }}">
+                  {{ item.q }}
+                </button>
+              </h2>
+              <div id="faq{{ loop.index }}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}">
+                <div class="accordion-body">{{ item.a }}</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="col-lg-4">
+        <div class="os-card p-4 sticky-top" style="top:90px;">
+          <h5>Book {{ service.name }}</h5>
+          <p class="small text-muted">Backed by our {{ warranty_days }}-day warranty.</p>
+          <a href="{{ url_for('public.contact') }}" class="btn btn-primary w-100">
+            <i class="bi bi-clipboard-check"></i> Request Service
+          </a>
+          <a href="tel:{{ business_phone }}" class="btn btn-outline-primary w-100 mt-2">
+            <i class="bi bi-telephone"></i> Call Us
+          </a>
+          <a href="https://wa.me/{{ business_whatsapp }}?text=Hi%2C%20I%20want%20to%20book%20{{ service.name|urlencode }}." target="_blank" class="btn btn-outline-success w-100 mt-2">
+            <i class="bi bi-whatsapp"></i> WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

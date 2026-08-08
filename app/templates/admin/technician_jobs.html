@@ -1,0 +1,27 @@
+{% extends "admin/_layout.html" %}
+
+{% block admin_content %}
+<h2 class="mb-4">Jobs for {{ tech.name }}</h2>
+
+<div class="os-card p-0">
+  <table class="table os-table mb-0">
+    <thead><tr>
+      <th>#</th><th>Customer</th><th>Service</th><th>Date</th><th>Status</th><th></th>
+    </tr></thead>
+    <tbody>
+      {% for j in jobs %}
+      <tr>
+        <td>{{ j.id }}</td>
+        <td>{{ j.customer.name }}</td>
+        <td>{{ j.service.name }}</td>
+        <td>{{ j.booking_date.strftime('%d %b %Y') }}</td>
+        <td><span class="pill {{ j.status|lower|replace(' ', '') }}">{{ j.status }}</span></td>
+        <td><a href="{{ url_for('admin.booking_detail', booking_id=j.id) }}" class="btn btn-sm btn-outline-primary">Open</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="text-center text-muted py-4">No jobs assigned.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

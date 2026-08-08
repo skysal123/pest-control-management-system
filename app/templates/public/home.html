@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Pest Control You Can Trust | {{ business_name }}{% endblock %}
+
+{% block content %}
+<section class="os-hero">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-7">
+        <span class="badge-soft mb-3"><i class="bi bi-shield-check"></i> Licensed & Certified Pest Specialists</span>
+        <h1 class="display-5 mb-3">Safe, effective pest control for your home & business.</h1>
+        <p class="lead opacity-75">
+          From termites and cockroaches to rodents and mosquitoes — our trained technicians deliver guaranteed, family-safe treatments.
+        </p>
+        <div class="os-hero-cta d-flex gap-2 flex-wrap">
+          <a href="{{ url_for('public.contact') }}" class="btn btn-light btn-lg">
+            <i class="bi bi-clipboard-check"></i> Request a Free Enquiry
+          </a>
+          <a href="tel:{{ business_phone }}" class="btn btn-outline-light btn-lg">
+            <i class="bi bi-telephone-fill"></i> Call Now
+          </a>
+        </div>
+      </div>
+      <div class="col-lg-5 text-center">
+        <div class="display-1">🛡️</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="os-section">
+  <div class="container">
+    <div class="os-section-title">
+      <h2>Our Services</h2>
+      <p>Comprehensive pest control tailored to your needs.</p>
+    </div>
+    <div class="row g-4">
+      {% for s in services %}
+      {% set s_image = s.image or ('services/' ~ s.slug ~ '.webp') %}
+      <div class="col-md-6 col-lg-4">
+        <div class="os-card os-service-card h-100 p-0 overflow-hidden">
+          {% if s_image %}
+          <div class="os-service-thumb" style="background-image: linear-gradient(rgba(255,255,255,.05), rgba(255,255,255,.10)), url('{{ url_for('static', filename=s_image) }}');">
+            <div class="icon-wrap mb-0"><i class="bi {{ s.icon or 'bi-bug-fill' }}"></i></div>
+          </div>
+          {% else %}
+          <div class="p-4">
+            <div class="icon-wrap mb-3"><i class="bi {{ s.icon or 'bi-bug-fill' }}"></i></div>
+          </div>
+          {% endif %}
+          <div class="p-4">
+            <h5 class="mb-2">{{ s.name }}</h5>
+            <p class="text-muted small mb-3">{{ s.short_description }}</p>
+            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('public.service_detail', slug=s.slug) }}">
+              Learn more <i class="bi bi-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="col-12 text-center text-muted">No services available right now.</div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="os-section bg-white">
+  <div class="container">
+    <div class="os-section-title">
+      <h2>Why Choose Us</h2>
+      <p>Trusted by hundreds of households and businesses.</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-3">
+        <div class="os-card p-4 text-center h-100">
+          <div class="icon-wrap mx-auto mb-3"><i class="bi bi-award-fill"></i></div>
+          <h6>Certified Experts</h6>
+          <p class="small text-muted mb-0">Licensed technicians with industry-grade training.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="os-card p-4 text-center h-100">
+          <div class="icon-wrap mx-auto mb-3"><i class="bi bi-shield-fill-check"></i></div>
+          <h6>Safe Treatments</h6>
+          <p class="small text-muted mb-0">Pet- and child-safe chemicals, odour-controlled.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="os-card p-4 text-center h-100">
+          <div class="icon-wrap mx-auto mb-3"><i class="bi bi-arrow-repeat"></i></div>
+          <h6>Warranty Backed</h6>
+          <p class="small text-muted mb-0">Up to {{ warranty_days }}-day warranty on every service.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="os-card p-4 text-center h-100">
+          <div class="icon-wrap mx-auto mb-3"><i class="bi bi-headset"></i></div>
+          <h6>24/7 Support</h6>
+          <p class="small text-muted mb-0">Reach us anytime on phone, WhatsApp, or email.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="os-section">
+  <div class="container">
+    <div class="os-section-title">
+      <h2>What Customers Say</h2>
+      <p>Real reviews from real customers.</p>
+    </div>
+    <div class="row g-4">
+      {% for t in testimonials %}
+      <div class="col-md-6 col-lg-4">
+        <div class="os-card p-4 h-100">
+          <div class="mb-2 text-warning">
+            {% for i in range(t.rating) %}<i class="bi bi-star-fill"></i>{% endfor %}
+          </div>
+          <p class="mb-2">"{{ t.comments }}"</p>
+          <small class="text-muted">— {{ t.customer.name }}</small>
+        </div>
+      </div>
+      {% else %}
+      <div class="col-12 text-center text-muted">No reviews yet — be the first!</div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="os-section bg-primary text-white text-center">
+  <div class="container">
+    <h2 class="mb-2">Ready for a pest-free space?</h2>
+    <p class="lead mb-4">Book a service today and let our experts handle the rest.</p>
+    <a href="{{ url_for('public.contact') }}" class="btn btn-light btn-lg">
+      <i class="bi bi-clipboard-check"></i> Enquire Now
+    </a>
+  </div>
+</section>
+{% endblock %}

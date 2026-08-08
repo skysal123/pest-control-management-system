@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Services | {{ business_name }}{% endblock %}
+
+{% block content %}
+<section class="os-hero" style="padding: 3rem 0;">
+  <div class="container text-center">
+    <h1>Our Services</h1>
+    <p class="lead mb-0 opacity-75">Targeted solutions for every pest problem.</p>
+  </div>
+</section>
+
+<section class="os-section">
+  <div class="container">
+    <div class="row g-4">
+      {% for s in services %}
+      {% set s_image = s.image or ('services/' ~ s.slug ~ '.webp') %}
+      <div class="col-md-6 col-lg-4">
+        <div class="os-card os-service-card h-100 p-0 overflow-hidden d-flex flex-column">
+          {% if s_image %}
+          <div class="os-service-thumb" style="background-image: linear-gradient(rgba(255,255,255,.05), rgba(255,255,255,.10)), url('{{ url_for('static', filename=s_image) }}');">
+            <div class="icon-wrap mb-0"><i class="bi {{ s.icon or 'bi-bug-fill' }}"></i></div>
+          </div>
+          {% else %}
+          <div class="p-4">
+            <div class="icon-wrap mb-3"><i class="bi {{ s.icon or 'bi-bug-fill' }}"></i></div>
+          </div>
+          {% endif %}
+          <div class="p-4 d-flex flex-column flex-grow-1">
+            <h5 class="mb-2">{{ s.name }}</h5>
+            <p class="text-muted small flex-grow-1">{{ s.short_description }}</p>
+            <a class="btn btn-outline-primary btn-sm mt-2 align-self-start" href="{{ url_for('public.service_detail', slug=s.slug) }}">
+              View details
+            </a>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="col-12 text-center text-muted">Services will be listed here soon.</div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

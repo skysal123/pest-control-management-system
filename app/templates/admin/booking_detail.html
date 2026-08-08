@@ -1,0 +1,107 @@
+{% extends "admin/_layout.html" %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">Booking #{{ booking.id }}</h2>
+  <span class="pill {{ booking.status|lower|replace(' ', '') }} fs-6">{{ booking.status }}</span>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="os-card p-4 mb-3">
+      <h5>Customer</h5>
+      <p class="mb-1"><strong>{{ booking.customer.name }}</strong></p>
+      <p class="mb-1"><i class="bi bi-telephone"></i> {{ booking.customer.phone }}</p>
+      <p class="mb-1"><i class="bi bi-envelope"></i> {{ booking.customer.email or '—' }}</p>
+      <p class="mb-0"><i class="bi bi-geo-alt"></i> {{ booking.address or booking.customer.address or '—' }}</p>
+    </div>
+
+    <div class="os-card p-4 mb-3">
+      <h5>Service Details</h5>
+      <p class="mb-1"><strong>Service:</strong> {{ booking.service.name }}</p>
+      <p class="mb-1"><strong>Date:</strong> {{ booking.booking_date.strftime('%d %b %Y') }} {{ booking.booking_time or '' }}</p>
+      <p class="mb-1"><strong>Technician:</strong> {{ booking.technician.name if booking.technician else '—' }}</p>
+      {% if booking.completed_at %}
+        <p class="mb-1"><strong>Completed:</strong> {{ booking.completed_at.strftime('%d %b %Y, %H:%M') }}</p>
+        {% if booking.warranty_end %}
+          <p class="mb-0">
+            <strong>Warranty:</strong>
+            {% if booking.is_under_warranty %}
+              <span class="badge bg-success">Active until {{ booking.warranty_end.strftime('%d %b %Y') }}</span>
+            {% else %}
+              <span class="badge bg-secondary">Expired {{ booking.warranty_end.strftime('%d %b %Y') }}</span>
+            {% endif %}
+          </p>
+        {% endif %}
+      {% endif %}
+      {% if booking.notes %}
+        <hr><strong>Notes:</strong>
+        <p class="small mb-0" style="white-space: pre-line;">{{ booking.notes }}</p>
+      {% endif %}
+    </div>
+
+    {% if booking.feedback %}
+    <div class="os-card p-4">
+      <h5 class="text-success"><i class="bi bi-star-fill"></i> Customer Feedback</h5>
+      <div class="mb-2 text-warning">
+        {% for i in range(booking.feedback.rating) %}<i class="bi bi-star-fill"></i>{% endfor %}
+      </div>
+      <p class="mb-0">{{ booking.feedback.comments or '—' }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-6">
+    <div class="os-card p-4 mb-3">
+      <h5>Actions</h5>
+      <form method="post" action="{{ url_for('admin.booking_update', booking_id=booking.id) }}" class="d-grid gap-2">
+        {% if booking.status == 'Pending' %}
+          <button name="action" value="confirm" class="btn btn-primary">Confirm Booking</button>
+        {% endif %}
+        {% if booking.status in ['Pending','Confirmed'] %}
+          <div class="input-group">
+            <select name="technician_id" class="form-select">
+              {% for t in technicians %}
+              <option value="{{ t.id }}" {% if booking.technician_id==t.id %}selected{% endif %}>{{ t.name }}</option>
+              {% endfor %}
+            </select>
+            <button name="action" value="assign" class="btn btn-primary">Assign Technician</button>
+          </div>
+        {% endif %}
+        {% if booking.status == 'Assigned' %}
+          <button name="action" value="start" class="btn btn-primary">Mark In Progress</button>
+        {% endif %}
+        {% if booking.status == 'In Progress' %}
+          <button name="action" value="complete" class="btn btn-success">Mark Completed</button>
+        {% endif %}
+        {% if booking.status not in ['Completed','Cancelled'] %}
+          <button name="action" value="cancel" class="btn btn-outline-danger"
+                  data-confirm="Cancel this booking?">Cancel Booking</button>
+        {% endif %}
+      </form>
+    </div>
+
+    <div class="os-card p-4">
+      <h5>Edit Details</h5>
+      <form method="post" action="{{ url_for('admin.booking_update', booking_id=booking.id) }}" class="row g-2">
+        <input type="hidden" name="action" value="edit">
+        <div class="col-6">
+          <label class="form-label small">Date</label>
+          <input type="date" name="booking_date" class="form-control form-control-sm" value="{{ booking.booking_date.isoformat() }}">
+        </div>
+        <div class="col-6">
+          <label class="form-label small">Time</label>
+          <input type="time" name="booking_time" class="form-control form-control-sm" value="{{ booking.booking_time or '' }}">
+        </div>
+        <div class="col-12">
+          <label class="form-label small">Address</label>
+          <input type="text" name="address" class="form-control form-control-sm" value="{{ booking.address or '' }}">
+        </div>
+        <div class="col-12">
+          <button class="btn btn-sm btn-outline-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

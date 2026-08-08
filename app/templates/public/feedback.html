@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Share your feedback | {{ business_name }}{% endblock %}
+
+{% block content %}
+<section class="os-section">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-6">
+        <div class="os-card p-4">
+          <h4 class="mb-1">How was your service?</h4>
+          <p class="text-muted small">
+            Booking #{{ booking.id }} · {{ booking.service.name }} on {{ booking.booking_date.strftime('%d %b %Y') }}
+          </p>
+          <form method="post">
+            <label class="form-label">Rating</label>
+            <div class="os-stars mb-3">
+              {% for i in range(5, 0, -1) %}
+                <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}">
+                <label for="star{{ i }}" title="{{ i }} stars">★</label>
+              {% endfor %}
+            </div>
+            <label class="form-label">Comments</label>
+            <textarea name="comments" rows="4" class="form-control mb-3" placeholder="Tell us about your experience..."></textarea>
+            <button class="btn btn-primary w-100">Submit Feedback</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

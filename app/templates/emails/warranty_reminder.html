@@ -1,0 +1,28 @@
+<!doctype html><html><body style="font-family:Segoe UI,Arial,sans-serif;color:#1c2434;background:#f5f8fb;padding:24px;">
+<div style="max-width:560px;margin:auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e7ecf3;">
+  <div style="background:#ffc107;color:#1c2434;padding:20px 24px;">
+    <h2 style="margin:0;">{{ business_name }}</h2>
+    <div style="font-size:13px;">Warranty Expiring Soon</div>
+  </div>
+  <div style="padding:24px;">
+    <p>Hi {{ customer.name }},</p>
+    <p>This is a friendly reminder that your warranty for the following service is about to expire:</p>
+    <table style="width:100%;border-collapse:collapse;">
+      <tr><td style="padding:6px 0;color:#6c757d;">Service</td><td><strong>{{ service.name }}</strong></td></tr>
+      <tr><td style="padding:6px 0;color:#6c757d;">Completed on</td><td>{{ booking.completed_at.strftime('%d %B %Y') }}</td></tr>
+      <tr><td style="padding:6px 0;color:#6c757d;">Warranty ends</td><td>{{ warranty_end.strftime('%d %B %Y') }}</td></tr>
+      <tr><td style="padding:6px 0;color:#6c757d;">Days left</td><td><strong>{{ days_left }}</strong></td></tr>
+    </table>
+    <p style="margin-top:18px;">If you notice any recurring pest activity before then, just give us a call — we'll re-treat at no extra charge under warranty.</p>
+    <p style="margin-top:18px;">Want to extend your coverage or schedule a fresh inspection? Book a new service anytime.</p>
+    <p style="text-align:center;margin:24px 0;">
+      <a href="{{ book_url }}" style="background:#0d6efd;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;">
+        Book a Follow-up
+      </a>
+    </p>
+  </div>
+  <div style="background:#f5f8fb;padding:14px 24px;color:#6c757d;font-size:12px;text-align:center;">
+    © {{ business_name }} · This is an automated warranty reminder.
+  </div>
+</div>
+</body></html>

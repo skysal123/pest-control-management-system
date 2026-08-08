@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}About Us | {{ business_name }}{% endblock %}
+
+{% block content %}
+<section class="os-hero" style="padding: 3rem 0;">
+  <div class="container text-center">
+    <h1>About {{ business_name }}</h1>
+    <p class="lead mb-0 opacity-75">Protecting homes and businesses since 2010.</p>
+  </div>
+</section>
+
+<section class="os-section">
+  <div class="container">
+    <div class="row g-5 align-items-start">
+      <div class="col-lg-6">
+        <h3>Our Story</h3>
+        <p>
+          {{ business_name }} started with a simple mission — to deliver reliable, eco-friendly pest control
+          solutions that families can trust. Over a decade later, we proudly serve hundreds of customers
+          across {{ business_city }} and beyond.
+        </p>
+        <p>
+          Our certified technicians use the latest techniques and government-approved chemicals
+          to ensure complete pest elimination with zero harm to your loved ones.
+        </p>
+      </div>
+      <div class="col-lg-6">
+        <div class="os-card p-4">
+          <h5 class="mb-3"><i class="bi bi-bullseye text-primary"></i> Mission</h5>
+          <p>To deliver safe, effective and affordable pest control that gives every customer lasting peace of mind.</p>
+          <h5 class="mb-3 mt-4"><i class="bi bi-eye text-primary"></i> Vision</h5>
+          <p>To be the most trusted pest control partner in every neighbourhood we serve.</p>
+          <h5 class="mb-3 mt-4"><i class="bi bi-patch-check text-primary"></i> Certifications</h5>
+          <ul class="mb-0">
+            <li>Licensed by the State Pest Control Board</li>
+            <li>ISO 9001:2015 Certified Operations</li>
+            <li>Member — Indian Pest Management Association</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

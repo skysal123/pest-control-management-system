@@ -1,0 +1,745 @@
+Pest Control Management System — Complete Flow Walkthrough
+
+  I'll walk you through every interaction, button click, and what happens in the
+  backend and database. This is structured as a documentation guide.
+
+  ---
+  �️ Application Architecture Overview
+
+  Customer Browser → Flask Route (Blueprint) → View Function → Model
+  (SQLAlchemy) → SQLite/PostgreSQL
+                                                ↓
+                                       Templates (Jinja2) ← Static CSS/JS
+                                                ↓
+                                       Notifications Module → Email (SMTP)
+                                                          → In-app Notifications
+  table
+
+  Tech layers:
+  - Frontend: Bootstrap 5 + Bootstrap Icons + custom CSS (style.css)
+  - Templates: Jinja2 — extends base.html → admin/technician extend their own
+  _layout.html
+  - Backend: Flask blueprints (public, auth, admin, technician)
+  - Models: SQLAlchemy ORM mapping Python classes to database tables
+  - Database: SQLite (dev) / PostgreSQL (prod)
+  - Notifications: notifications.py sends email + writes to notifications table
+
+  ---
+  📍 Phase 1: Customer Visits Website
+
+  Flow 1: Home Page (/)
+
+  File: blueprints/public.py:42 → renders app/templates/public/home.html
+
+  1. Browser sends GET / to Flask
+  2. public.home() runs two queries:
+    - Service.query.filter_by(status="ACTIVE") → loads all active services
+    - Feedback.query.order_by(...).limit(5) → loads 5 latest testimonials
+  3. Renders home.html which extends base.html
+  4. base.html includes _topbar.html + _navbar.html + _footer.html
+  5. Page is returned to browser with HTML + CSS + JS
+
+  What you'll see on screen:
+  - Top dark bar: email, phone, business hours
+  - Navbar: Home, About, Services, Contact, Login button
+  - Hero section: "Safe, effective pest control..." + "Request a Free Enquiry"
+  CTA
+  - Services grid: 6 service cards (Termite, Cockroach, etc.)
+  - Why Choose Us: 4 icon cards
+  - Testimonials: Latest 5 feedback reviews
+  - Footer: Quick links + contact info
+  - Floating buttons (bottom right): 📞 Call + 💬 WhatsApp
+
+  Each button click:
+
+  ┌────────────────────────────┬──────────────────────────────────────────┐
+  │           Button           │                  Action                  │
+  ├────────────────────────────┼──────────────────────────────────────────┤
+  │ "Request a Free Enquiry"   │ Redirects to /contact                    │
+  ├────────────────────────────┼──────────────────────────────────────────┤
+  │ "Call Now"                 │ Opens phone dialer (tel:+91-...)         │
+  ├────────────────────────────┼──────────────────────────────────────────┤
+  │ Service card "Learn more"  │ Redirects to /services/<slug>            │
+  ├────────────────────────────┼──────────────────────────────────────────┤
+  │ "Enquire Now" (bottom CTA) │ Redirects to /contact                    │
+  ├────────────────────────────┼──────────────────────────────────────────┤
+  │ Floating 📞                │ Phone dialer                             │
+  ├────────────────────────────┼──────────────────────────────────────────┤
+  │ Floating 💬                │ Opens WhatsApp chat (wa.me/919876543210) │
+  ├────────────────────────────┼──────────────────────────────────────────┤
+  │ Navbar "Login"             │ Redirects to /auth/login                 │
+  └────────────────────────────┴──────────────────────────────────────────┘
+
+  ---
+  Flow 2: About Page (/about)
+
+  File: blueprints/public.py:54
+
+  1. Simple route — no DB query
+  2. Renders about.html with hardcoded company story, mission, vision,
+  certifications
+  3. Business globals (business_name, business_city) injected via
+  inject_globals() in app/__init__.py
+
+  ---
+  Flow 3: Services List (/services)
+
+  File: blueprints/public.py:59
+
+  1. Loads all active services
+  2. Renders services.html — grid of service cards
+  3. Each card links to /services/<slug>
+
+  ---
+  Flow 4: Service Detail (/services/<slug>)
+
+  File: blueprints/public.py:65
+
+  1. Query: Service.query.filter_by(slug=slug, status="ACTIVE").first_or_404()
+  2. Renders service_detail.html
+  3. FAQ rendering uses service.faq_list property (lines added to models.py):
+    - Parses FAQ text into [{"q": "...", "a": "..."}]
+    - Bootstrap accordion displays each Q&A
+
+  Sidebar booking widget:
+
+  ┌───────────────────┬────────────────────────────────────────┐
+  │      Button       │                 Action                 │
+  ├───────────────────┼────────────────────────────────────────┤
+  │ "Request Service" │ /contact                               │
+  ├───────────────────┼────────────────────────────────────────┤
+  │ "Call Us"         │ Phone dialer                           │
+  ├───────────────────┼────────────────────────────────────────┤
+  │ "WhatsApp"        │ Opens WhatsApp with pre-filled message │
+  └───────────────────┴────────────────────────────────────────┘
+
+  ---
+  Flow 5: Contact + Enquiry Form (/contact)
+
+  File: blueprints/public.py:71
+
+  What you fill in:
+  - Name, Phone (required), Email, Address, City, Service Required, Preferred
+  Date, Message
+
+  When you click "Submit Enquiry":
+
+  1. Browser sends POST /contact with form data
+  2. public.contact() validates:
+    - Name + phone required (else flash error, re-render form)
+    - Parse preferred_date from string to date object
+  3. _get_or_create_customer() (lines 18-39):
+    - Searches customers table by phone number
+    - If exists: updates email/address/city if missing
+    - If not: creates new Customer row, calls db.session.flush() to get the ID
+  4. Creates new Lead row:
+  Lead(
+      customer_id=customer.id,
+      service_id=int(service_id),
+      source="Website",
+      message=message,
+      preferred_date=preferred_date,
+      status="New"
+  )
+  5. db.session.commit() — saves both rows to database
+  6. Flashes success message, redirects to /contact (PRG pattern)
+  7. Admin gets in-app notification (via admin.dashboard() stats query)
+
+  ---
+  🔐 Phase 2: Login Flow (/auth/login)
+
+  File: blueprints/auth.py:26
+
+  When you visit /auth/login:
+
+  1. auth.login() checks if already logged in → redirects by role
+  2. Renders login.html form
+
+  When you submit email + password:
+
+  1. Browser sends POST /auth/login
+  2. Backend validation:
+    - Lowercase the email
+    - Query: User.query.filter(db.func.lower(User.email) == email).first()
+  3. Password check:
+    - user.check_password(password) uses werkzeug.security.check_password_hash()
+    - Compares hash with stored password_hash (bcrypt/argon)
+  4. Active check:
+    - If is_active=False → flash warning, deny login
+  5. login_user(user, remember=remember) — Flask-Login creates session cookie
+  6. _role_redirect(user):
+    - ADMIN → /admin/
+    - TECHNICIAN → /technician/
+
+  Session persistence:
+  - @login_manager.user_loader in app/__init__.py reloads User from DB on each
+  request via session cookie
+
+  ---
+  👨‍💼 Phase 3: Admin Portal
+
+  Admin Dashboard (/admin/)
+
+  File: blueprints/admin.py:32
+
+  1. @_admin_required decorator checks:
+    - login_required — must be logged in
+    - current_user.is_admin — must have ADMIN role
+    - Otherwise → 403 Forbidden
+  2. Stats queries (all in one dashboard load):
+  stats = {
+      "total_leads": Lead.query.count(),
+      "new_leads": Lead.query.filter_by(status="New").count(),
+      "upcoming_bookings": Booking.query.filter(
+          Booking.booking_date >= today,
+          Booking.status.in_(["Pending","Confirmed","Assigned","In Progress"])
+      ).count(),
+      "completed": Booking.query.filter_by(status="Completed").count(),
+      "pending_jobs": Booking.query.filter(
+          Booking.status.in_(["Confirmed","Assigned","In Progress"])
+      ).count(),
+      "feedback_count": Feedback.query.count(),
+      "avg_rating": db.session.query(db.func.avg(Feedback.rating)).scalar() or 0
+  }
+  3. Loads 5 recent leads + 5 upcoming bookings + expiring warranties
+  4. Renders admin/dashboard.html with 7 stat cards + 3 tables
+
+  Buttons on dashboard:
+
+  ┌────────────────────────────────┬──────────────────────────────────┐
+  │             Button             │              Action              │
+  ├────────────────────────────────┼──────────────────────────────────┤
+  │ "View all" (Recent Leads)      │ /admin/leads                     │
+  ├────────────────────────────────┼──────────────────────────────────┤
+  │ "View all" (Upcoming Bookings) │ /admin/bookings                  │
+  ├────────────────────────────────┼──────────────────────────────────┤
+  │ "All warranties"               │ /admin/warranties                │
+  ├────────────────────────────────┼──────────────────────────────────┤
+  │ Each "Open" button             │ Opens detail page                │
+  ├────────────────────────────────┼──────────────────────────────────┤
+  │ Sidebar nav links              │ Navigate to other admin sections │
+  └────────────────────────────────┴──────────────────────────────────┘
+
+  ---
+  Lead Management (/admin/leads)
+
+  File: blueprints/admin.py:71
+
+  List page flow:
+
+  1. Reads query params: q (search), source, status
+  2. Search query (line 79-88):
+  if q:
+      like = f"%{q}%"
+      query = query.join(Customer).filter(
+          or_(Customer.name.ilike(like),
+              Customer.phone.ilike(like),
+              Customer.email.ilike(like),
+              Lead.message.ilike(like))
+      )
+    - SQL LIKE %search% on customer name/phone/email + lead message
+  3. Filter by source/status — exact match WHERE clauses
+  4. Orders by created_at DESC — newest first
+  5. Renders table with status pills (color-coded via CSS)
+
+  Each row's "Open" button → /admin/leads/<lead_id>
+
+  Lead Detail page flow:
+
+  1. Loads lead + all active technicians + active services
+  2. Shows customer info, service, source, message, status
+  3. Status update (POST /admin/leads/<id>/status):
+    - Updates lead.status, saves to DB
+  4. Technician assignment (POST /admin/leads/<id>/assign):
+    - Sets lead.assigned_to = technician.id
+  5. "Convert to Booking" button → /admin/bookings/new?lead_id=<id>
+
+  Manual lead creation (/admin/leads/new):
+
+  1. Admin fills form (for WhatsApp/phone enquiries)
+  2. Backend:
+    - Finds-or-creates customer by phone
+    - Creates new Lead with chosen source
+    - Redirects to lead detail
+
+  ---
+  Booking Management
+
+  Booking List (/admin/bookings)
+
+  File: blueprints/admin.py:175
+
+  1. Loads all bookings, optional filter by status
+  2. Shows warranty status column:
+    - If booking.status == "Completed":
+        - booking.is_under_warranty → checks if completed_at + 90 days >= now
+      - Shows green "Active" or grey "Expired" badge
+
+  Filter dropdown → GET with ?status=... → re-renders filtered list
+
+  "New Booking" button → /admin/bookings/new
+
+  Create Booking (/admin/bookings/new)
+
+  File: blueprints/admin.py:186
+
+  Two ways to reach here:
+  1. Standalone (no lead context)
+  2. From lead detail: ?lead_id=<id> — pre-fills customer info
+
+  When you submit:
+
+  1. Form data parsed: name, phone, email, address, city, service_id,
+  booking_date, booking_time, technician_id, lead_id, status
+  2. Finds-or-creates customer by phone (same logic as enquiry)
+  3. Creates Booking row:
+  Booking(
+      customer_id=cust.id,
+      service_id=service_id,
+      booking_date=booking_date,
+      booking_time=booking_time,
+      address=address,
+      technician_id=int(technician_id) if technician_id else None,
+      lead_id=int(lead_id) if lead_id else None,
+      status="Assigned" if technician_id and status == "Pending" else status
+  )
+  4. If linked to lead: updates lead status to "Booking Created"
+  5. db.session.commit()
+  6. Triggers notifications (see Phase 6):
+    - If status is "Confirmed"/"Assigned" → notify_booking_created(b)
+    - If technician assigned → notify_technician_assigned(b)
+
+  Booking Detail (/admin/bookings/<id>)
+
+  File: blueprints/admin.py:246
+
+  What you see:
+  - Customer info (name, phone, email, address)
+  - Service details (service name, date, time, technician, completed_at,
+  warranty status)
+  - Customer feedback (if submitted)
+  - Action buttons (context-aware, only show valid transitions):
+
+  ┌────────────────────────────────┬──────────────────────────────┐
+  │         Current Status         │      Available Actions       │
+  ├────────────────────────────────┼──────────────────────────────┤
+  │ Pending                        │ "Confirm Booking"            │
+  ├────────────────────────────────┼──────────────────────────────┤
+  │ Pending/Confirmed              │ "Assign Technician" dropdown │
+  ├────────────────────────────────┼──────────────────────────────┤
+  │ Assigned                       │ "Mark In Progress"           │
+  ├────────────────────────────────┼──────────────────────────────┤
+  │ In Progress                    │ "Mark Completed"             │
+  ├────────────────────────────────┼──────────────────────────────┤
+  │ Any except Completed/Cancelled │ "Cancel Booking"             │
+  └────────────────────────────────┴──────────────────────────────┘
+
+  Edit details form — update date/time/address
+
+  When you click "Confirm Booking":
+
+  1. Form sends POST /admin/bookings/<id>/update with action=confirm
+  2. Backend (booking_update()):
+    - Sets booking.status = "Confirmed"
+    - Calls notify_booking_created(b) → sends email + in-app notifications
+    - Flashes success, redirects back
+
+  When you click "Assign Technician":
+
+  1. Form sends action=assign with technician_id
+  2. Backend:
+    - Sets booking.technician_id = tid
+    - Sets booking.status = "Assigned"
+    - If linked lead → updates lead to "Booking Created"
+    - Calls notify_booking_created(b) + notify_technician_assigned(b)
+    - Technician receives email + in-app notification
+
+  When you click "Mark Completed":
+
+  1. Form sends action=complete
+  2. Backend:
+    - Sets booking.status = "Completed"
+    - Sets booking.completed_at = datetime.utcnow() ← warranty countdown starts 
+  here
+    - Calls notify_service_completed(b) → customer gets thank-you email +
+  feedback link
+    - Admin gets in-app notification
+
+  ---
+  Technician Management (/admin/technicians)
+
+  File: blueprints/admin.py:300
+
+  List page — table of all technicians with status
+
+  Add Technician (/admin/technicians/new):
+
+  1. Form: name, email, phone, password
+  2. Backend:
+    - Creates User row with role="TECHNICIAN"
+    - user.set_password(password) — hashes with
+  werkzeug.security.generate_password_hash()
+    - Sets is_active=True
+
+  Edit Technician (/admin/technicians/<id>/edit):
+
+  - Update name, email, phone
+  - Toggle is_active checkbox
+  - Optional password change (leave blank to keep)
+
+  Activate/Deactivate (/admin/technicians/<id>/toggle):
+
+  - Flips is_active boolean
+  - Deactivated technicians can't login but their booking history stays
+
+  View Jobs (/admin/technicians/<id>):
+
+  - Shows all bookings assigned to that technician
+
+  ---
+  Services Management (/admin/services)
+
+  File: blueprints/admin.py:360
+
+  Add/Edit Service:
+
+  1. Form fields: name, slug (auto from name), short_description, description,
+  benefits, process, FAQ, icon (Bootstrap Icons class), status
+  2. Backend creates/updates Service row
+
+  Note: FAQ is stored as raw text. The Service.faq_list property parses it at
+  render time.
+
+  ---
+  Warranty Management (/admin/warranties)
+
+  File: blueprints/admin.py:417 + warranty.py
+
+  What you see:
+
+  1. Table of all completed bookings
+  2. For each booking:
+    - warranty_end = completed_at + WARRANTY_DAYS (90 days)
+    - days_left = (warranty_end - now).days
+    - Status: "Active" (green) or "Expired" (grey)
+    - Reminders sent: badge showing count from warranty_reminders table
+
+  How reminders work:
+
+  1. Daily cron runs python -m warranty
+  2. warranty.scan_and_notify(app):
+    - Loads all bookings with completed_at IS NOT NULL
+    - For each booking, checks if warranty expiry is within reminder window
+    - Reminder offsets: [7, 1] days before expiry
+    - Checks _already_reminded(booking_id, days_before) — queries
+  warranty_reminders table
+    - If not already sent:
+        - Calls notify_warranty_reminder(b, days_left) → sends email
+      - Logs WarrantyReminder row to prevent duplicates
+      - In-app notifications to all admins
+
+  ---
+  Feedback Dashboard (/admin/feedback)
+
+  File: blueprints/admin.py:409
+
+  What you see:
+  - All customer feedback sorted by date
+  - Each card shows:
+    - Customer name
+    - Booking #, service name
+    - Star rating (1-5, yellow stars)
+    - Comments
+    - Technician name + date
+
+  ---
+  👷 Phase 4: Technician Portal
+
+  Technician Dashboard (/technician/)
+
+  File: blueprints/technician.py:23
+
+  1. Loads 3 categories:
+    - Pending: status="Pending" (unaccepted)
+    - Active: status in ["Assigned", "In Progress"]
+    - Completed: status="Completed", last 10
+  2. Each table has "Open" button → /technician/jobs/<id>
+
+  Job Detail (/technician/jobs/<id>)
+
+  File: blueprints/technician.py:41
+
+  What you see:
+  - Customer info (name, phone, email, address)
+  - Service name, scheduled date/time
+  - Recommended process (collapsible from service.process)
+  - Notes (if any)
+  - Action buttons (context-aware):
+
+  ┌─────────────┬─────────────────────┐
+  │   Status    │       Actions       │
+  ├─────────────┼─────────────────────┤
+  │ Assigned    │ "Start Service"     │
+  ├─────────────┼─────────────────────┤
+  │ In Progress │ "Mark Completed"    │
+  ├─────────────┼─────────────────────┤
+  │ Any active  │ "Save Notes Only"   │
+  ├─────────────┼─────────────────────┤
+  │ Any active  │ "Add Note" textarea │
+  └─────────────┴─────────────────────┘
+
+  When you click "Start Service":
+
+  1. Form sends POST /technician/jobs/<id>/action with action=start
+  2. Backend:
+    - Sets booking.status = "In Progress"
+    - Saves to DB
+
+  When you click "Mark Completed":
+
+  1. Form sends action=complete with optional notes
+  2. Backend:
+    - Sets booking.status = "Completed"
+    - Sets booking.completed_at = datetime.utcnow() ← warranty starts
+    - Appends notes to booking.notes with timestamp
+    - Calls notify_service_completed(b):
+        - Customer gets email: thank-you + feedback link /feedback/<booking_id>
+      - All admins get in-app notifications
+
+  ---
+  📧 Phase 5: Notification System
+
+  File: notifications.py
+
+  When notifications fire:
+
+  ┌──────────────┬────────────────────────────────┬─────────────────────────┐
+  │    Event     │            Function            │       Recipients        │
+  ├──────────────┼────────────────────────────────┼─────────────────────────┤
+  │ Booking      │ notify_booking_created(b)      │ All admins (in-app) +   │
+  │ created      │                                │ Customer (email)        │
+  ├──────────────┼────────────────────────────────┼─────────────────────────┤
+  │ Technician   │ notify_technician_assigned(b)  │ Technician (in-app +    │
+  │ assigned     │                                │ email)                  │
+  ├──────────────┼────────────────────────────────┼─────────────────────────┤
+  │ Service      │                                │ Customer (email with    │
+  │ completed    │ notify_service_completed(b)    │ feedback link) + All    │
+  │              │                                │ admins (in-app)         │
+  ├──────────────┼────────────────────────────────┼─────────────────────────┤
+  │ Warranty     │ notify_warranty_reminder(b,    │ Customer (email) + All  │
+  │ expiring     │ days)                          │ admins (in-app)         │
+  └──────────────┴────────────────────────────────┴─────────────────────────┘
+
+  How email works:
+
+  1. send_email() helper:
+    - Checks if MAIL_USERNAME is configured
+    - Creates flask_mail.Message with subject, recipients, HTML body
+    - Calls mail.send(msg)
+    - Logs failures (doesn't crash app)
+  2. Email templates in app/templates/emails/:
+    - booking_confirmed.html
+    - technician_assigned.html
+    - service_completed.html
+    - warranty_reminder.html
+
+  How in-app works:
+
+  1. inapp_notify(user_id, type, message, link):
+    - Creates Notification row (user_id, type, message, link, status="unread")
+    - Saves to DB
+  2. Admin sees notifications at /admin/notifications
+  3. Page marks all "unread" as "read" on view
+
+  ---
+  ⭐ Phase 6: Customer Feedback
+
+  Customer receives feedback link
+
+  1. After service completion, customer gets email:
+    - Subject: "Service completed — share your feedback"
+    - Body contains: http://yoursite.com/feedback/<booking_id>
+  2. Customer clicks link → /feedback/<booking_id>
+
+  Feedback page (/feedback/<id>)
+
+  File: blueprints/public.py:119
+
+  1. Check if already submitted:
+    - Feedback.query.filter_by(booking_id=booking_id).first()
+    - If exists → show "already submitted" page
+  2. Check booking status:
+    - If not "Completed" → redirect home
+  3. Render form: star rating (1-5) + comments textarea
+
+  When customer submits:
+
+  1. Browser sends POST /feedback/<id>
+  2. Backend validates rating (1-5)
+  3. Creates Feedback row:
+  Feedback(
+      booking_id=bk.id,
+      customer_id=bk.customer_id,
+      technician_id=bk.technician_id,
+      rating=rating,
+      comments=comments
+  )
+  4. Saves to DB
+  5. Renders "Thank you" page
+  6. Admin sees it in /admin/feedback
+  7. Home page testimonials update (loads latest 5)
+
+  ---
+  �️ Database Schema Summary
+
+  Tables & Relationships
+
+  users (id, name, email, password_hash, role, is_active, created_at)
+    ↓ (technician_id)
+  bookings
+    ↓ (customer_id) → customers
+    ↓ (service_id)  → services
+    ↓ (lead_id)     → leads → customer_id → customers
+    ↓ (feedback)    → feedback → technician_id → users
+
+  notifications (id, user_id, type, message, link, status, created_at)
+  warranty_reminders (id, booking_id, sent_at, days_before, customer_email)
+
+  Key Models (models.py)
+
+  User — admin + technician auth
+  - set_password(raw) — hashes with werkzeug
+  - check_password(raw) — verifies hash
+  - is_admin / is_technician — role checks
+
+  Customer — created from enquiries or manual bookings
+  - Identified primarily by phone number (finds-or-creates pattern)
+
+  Service — pest control offerings
+  - faq_list property — parses FAQ text into accordion format
+  - icon — Bootstrap Icons class
+
+  Lead — enquiry tracker
+  - Statuses: New, Contacted, Follow-up Required, Booking Created, Closed,
+  Cancelled
+  - Sources: Website, WhatsApp, Phone Call, Referral
+  - One-to-one with Booking (when converted)
+
+  Booking — confirmed service
+  - Statuses: Pending, Confirmed, Assigned, In Progress, Completed, Cancelled
+  - warranty_end property: completed_at + WARRANTY_DAYS
+  - is_under_warranty property: warranty_end >= now
+
+  Feedback — post-service rating
+  - Unique per booking (unique=True on booking_id)
+  - 1-5 star rating + comments
+
+  Notification — in-app alert
+  - Linked to user_id (admin or technician)
+  - Types: booking_created, technician_assigned, service_completed,
+  warranty_reminder
+
+  WarrantyReminder — log to prevent duplicate sends
+  - Composite key: (booking_id, days_before)
+
+  ---
+  🔄 Complete Customer Journey
+
+  1. Customer visits homepage
+     → Sees services, clicks "Request Enquiry"
+     → Fills form on /contact
+     → Backend creates Customer + Lead (status="New")
+
+  2. Admin logs in
+     → Dashboard shows new lead count
+     → Opens lead, updates status to "Contacted"
+     → Calls customer, agrees on date
+
+  3. Admin clicks "Convert to Booking"
+     → Booking form pre-filled with customer info
+     → Admin selects service, date, time, technician
+     → Backend creates Booking (status="Assigned")
+     → Triggers notify_booking_created + notify_technician_assigned
+     → Customer receives confirmation email
+     → Technician receives email + in-app notification
+
+  4. Technician logs in
+     → Dashboard shows assigned job
+     → Opens job, clicks "Start Service"
+     → Backend sets status="In Progress"
+
+  5. Technician completes service
+     → Clicks "Mark Completed" (with optional notes)
+     → Backend sets status="Completed", completed_at=now
+     → Triggers notify_service_completed
+     → Customer receives email: "Thank you! Share feedback"
+
+  6. Customer clicks feedback link
+     → /feedback/<booking_id>
+     → Submits 5-star rating + comment
+     → Backend creates Feedback row
+     → Admin sees in feedback dashboard
+     → Home page testimonials update
+
+  7. 83 days later (7 days before 90-day warranty expiry)
+     → Daily cron runs warranty.scan_and_notify
+     → Finds booking's warranty ends in 7 days
+     → Checks warranty_reminders table (not sent yet)
+     → Sends email to customer: "Warranty expires in 7 days"
+     → Logs WarrantyReminder row
+     → Admin gets in-app notification
+
+  8. 89 days later (1 day before expiry)
+     → Cron runs again
+     → Sends second reminder: "Warranty expires tomorrow"
+
+  9. Customer renews service
+     → Books new service via /contact
+     → Cycle repeats
+
+  ---
+  🚀 Deployment Flow
+
+  Development
+
+  python run.py
+  # → Flask dev server on localhost:5000
+  # → Debug mode ON
+  # → SQLite database in instance/onestep.db
+
+  Production (Render/Hostinger)
+
+  1. Set DATABASE_URL=postgresql://... in .env
+  2. gunicorn starts app: gunicorn 'app:create_app()' --bind 0.0.0.0:$PORT 
+  --workers 3
+  3. Nginx proxies HTTPS to gunicorn
+  4. Cron job runs daily: python -m warranty
+
+  ---
+  📝 Key Design Patterns
+
+  1. Finds-or-creates customer — by phone number (same customer may enquire
+  multiple times)
+  2. PRG (Post-Redirect-Get) — POSTs redirect to GET to prevent form
+  resubmission
+  3. Role-based access control — _admin_required and _tech_required decorators
+  4. Status state machines — Lead status and Booking status have defined
+  transitions
+  5. Warranty as computed property — warranty_end = completed_at + WARRANTY_DAYS
+  (not stored, always fresh)
+  6. Notification deduplication — warranty_reminders table prevents duplicate
+  emails
+  7. Jinja template inheritance — base.html → admin/_layout.html →
+  admin/dashboard.html
+  8. Context processor globals — business_name, warranty_days, etc. available in
+  all templates
+
+  ---
+  This is the complete documentation you requested. Every button click, every
+  backend action, every database write is covered. Let me know if you need
+  deeper detail on any specific flow!
+
+✻ Churned for 35s
+
+❯ /export                                                                       
+  ⎿  Export cancelled

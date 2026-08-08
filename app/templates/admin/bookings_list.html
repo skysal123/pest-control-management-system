@@ -1,0 +1,49 @@
+{% extends "admin/_layout.html" %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">Bookings</h2>
+  <a href="{{ url_for('admin.booking_new') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> New Booking</a>
+</div>
+
+<form method="get" class="row g-2 mb-3">
+  <div class="col-md-4">
+    <select name="status" class="form-select">
+      <option value="">All statuses</option>
+      {% for st in ['Pending','Confirmed','Assigned','In Progress','Completed','Cancelled'] %}
+      <option value="{{ st }}" {% if status==st %}selected{% endif %}>{{ st }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-2"><button class="btn btn-outline-primary w-100">Filter</button></div>
+</form>
+
+<div class="os-card p-0">
+  <table class="table os-table mb-0">
+    <thead><tr>
+      <th>#</th><th>Customer</th><th>Service</th><th>Date</th><th>Technician</th><th>Status</th><th>Warranty</th><th></th>
+    </tr></thead>
+    <tbody>
+      {% for b in bookings %}
+      <tr>
+        <td>{{ b.id }}</td>
+        <td>{{ b.customer.name }}</td>
+        <td>{{ b.service.name }}</td>
+        <td>{{ b.booking_date.strftime('%d %b %Y') }} {{ b.booking_time or '' }}</td>
+        <td>{{ b.technician.name if b.technician else '—' }}</td>
+        <td><span class="pill {{ b.status|lower|replace(' ', '') }}">{{ b.status }}</span></td>
+        <td>
+          {% if b.status == 'Completed' %}
+            {% if b.is_under_warranty %}<span class="badge bg-success">Active</span>
+            {% else %}<span class="badge bg-secondary">Expired</span>{% endif %}
+          {% else %}<span class="text-muted small">—</span>{% endif %}
+        </td>
+        <td><a href="{{ url_for('admin.booking_detail', booking_id=b.id) }}" class="btn btn-sm btn-outline-primary">Open</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" class="text-center text-muted py-4">No bookings.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

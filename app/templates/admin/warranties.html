@@ -1,0 +1,46 @@
+{% extends "admin/_layout.html" %}
+
+{% block admin_content %}
+<h2 class="mb-4">Warranty Management</h2>
+<p class="text-muted small">
+  Each completed booking carries a {{ warranty_days }}-day warranty. Reminders go out
+  {{ warranty_days_before }} days and 1 day before expiry.
+</p>
+
+<div class="os-card p-0">
+  <table class="table os-table mb-0">
+    <thead><tr>
+      <th>#</th><th>Customer</th><th>Service</th><th>Completed</th><th>Warranty Ends</th><th>Days Left</th><th>Status</th><th>Reminders Sent</th>
+    </tr></thead>
+    <tbody>
+      {% for item in items %}
+      {% set b = item.booking %}
+      <tr>
+        <td>{{ b.id }}</td>
+        <td>{{ b.customer.name }}</td>
+        <td>{{ b.service.name }}</td>
+        <td>{{ b.completed_at.strftime('%d %b %Y') }}</td>
+        <td>{{ item.warranty_end.strftime('%d %b %Y') }}</td>
+        <td>
+          {% if item.expired %}
+            <span class="text-muted">expired</span>
+          {% else %}
+            {{ item.days_left }} day(s)
+          {% endif %}
+        </td>
+        <td>
+          {% if item.expired %}<span class="badge bg-secondary">Expired</span>
+          {% else %}<span class="badge bg-success">Active</span>{% endif %}
+        </td>
+        <td>
+          {% if item.reminded %}<span class="badge bg-info">{{ b.reminders|length }} reminder(s)</span>
+          {% else %}<span class="text-muted small">—</span>{% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" class="text-center text-muted py-4">No completed bookings yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

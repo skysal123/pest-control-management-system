@@ -1,0 +1,84 @@
+{% extends "technician/_layout.html" %}
+
+{% block tech_content %}
+<h2 class="mb-4">Hi, {{ current_user.name }} 👋</h2>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="os-stat-card warning"><div class="label">Pending</div><div class="value">{{ pending|length }}</div></div>
+  </div>
+  <div class="col-md-4">
+    <div class="os-stat-card info"><div class="label">Active</div><div class="value">{{ active|length }}</div></div>
+  </div>
+  <div class="col-md-4">
+    <div class="os-stat-card success"><div class="label">Completed (recent)</div><div class="value">{{ completed|length }}</div></div>
+  </div>
+</div>
+
+<div class="os-card p-4 mb-4">
+  <h5 class="mb-3"><i class="bi bi-hourglass-split text-warning"></i> Pending Confirmation</h5>
+  {% if pending %}
+  <table class="table table-sm mb-0">
+    <thead><tr><th>#</th><th>Customer</th><th>Service</th><th>Date</th><th></th></tr></thead>
+    <tbody>
+      {% for b in pending %}
+      <tr>
+        <td>{{ b.id }}</td>
+        <td>{{ b.customer.name }}</td>
+        <td>{{ b.service.name }}</td>
+        <td>{{ b.booking_date.strftime('%d %b %Y') }} {{ b.booking_time or '' }}</td>
+        <td><a href="{{ url_for('technician.job_detail', booking_id=b.id) }}" class="btn btn-sm btn-outline-primary">Open</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="text-muted small mb-0">No pending jobs.</p>
+  {% endif %}
+</div>
+
+<div class="os-card p-4 mb-4">
+  <h5 class="mb-3"><i class="bi bi-arrow-repeat text-info"></i> Active / In Progress</h5>
+  {% if active %}
+  <table class="table table-sm mb-0">
+    <thead><tr><th>#</th><th>Customer</th><th>Service</th><th>Date</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      {% for b in active %}
+      <tr>
+        <td>{{ b.id }}</td>
+        <td>{{ b.customer.name }}</td>
+        <td>{{ b.service.name }}</td>
+        <td>{{ b.booking_date.strftime('%d %b %Y') }} {{ b.booking_time or '' }}</td>
+        <td><span class="pill {{ b.status|lower|replace(' ', '') }}">{{ b.status }}</span></td>
+        <td><a href="{{ url_for('technician.job_detail', booking_id=b.id) }}" class="btn btn-sm btn-outline-primary">Open</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="text-muted small mb-0">No active jobs.</p>
+  {% endif %}
+</div>
+
+<div class="os-card p-4">
+  <h5 class="mb-3"><i class="bi bi-check2-circle text-success"></i> Recently Completed</h5>
+  {% if completed %}
+  <table class="table table-sm mb-0">
+    <thead><tr><th>#</th><th>Customer</th><th>Service</th><th>Completed</th><th></th></tr></thead>
+    <tbody>
+      {% for b in completed %}
+      <tr>
+        <td>{{ b.id }}</td>
+        <td>{{ b.customer.name }}</td>
+        <td>{{ b.service.name }}</td>
+        <td>{{ b.completed_at.strftime('%d %b %Y, %H:%M') }}</td>
+        <td><a href="{{ url_for('technician.job_detail', booking_id=b.id) }}" class="btn btn-sm btn-outline-secondary">View</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="text-muted small mb-0">No completed jobs yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

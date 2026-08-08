@@ -1,0 +1,25 @@
+<!doctype html><html><body style="font-family:Segoe UI,Arial,sans-serif;color:#1c2434;background:#f5f8fb;padding:24px;">
+<div style="max-width:560px;margin:auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e7ecf3;">
+  <div style="background:#0d6efd;color:#fff;padding:20px 24px;">
+    <h2 style="margin:0;">{{ business_name }}</h2>
+    <div style="opacity:.85;font-size:13px;">Booking Confirmation</div>
+  </div>
+  <div style="padding:24px;">
+    <p>Hi {{ customer.name }},</p>
+    <p>Your booking has been <strong>confirmed</strong>. Here are the details:</p>
+    <table style="width:100%;border-collapse:collapse;">
+      <tr><td style="padding:6px 0;color:#6c757d;">Booking ID</td><td><strong>#{{ booking.id }}</strong></td></tr>
+      <tr><td style="padding:6px 0;color:#6c757d;">Service</td><td>{{ service.name }}</td></tr>
+      <tr><td style="padding:6px 0;color:#6c757d;">Date</td><td>{{ booking.booking_date.strftime('%A, %d %B %Y') }}</td></tr>
+      {% if booking.booking_time %}<tr><td style="padding:6px 0;color:#6c757d;">Time</td><td>{{ booking.booking_time }}</td></tr>{% endif %}
+      {% if booking.address %}<tr><td style="padding:6px 0;color:#6c757d;">Address</td><td>{{ booking.address }}</td></tr>{% endif %}
+      <tr><td style="padding:6px 0;color:#6c757d;">Status</td><td><strong>{{ booking.status }}</strong></td></tr>
+    </table>
+    <p style="margin-top:18px;">Our team will reach you on the scheduled date. If you need to reschedule, just reply to this email.</p>
+    <p style="margin-top:24px;">Thank you for choosing {{ business_name }}!</p>
+  </div>
+  <div style="background:#f5f8fb;padding:14px 24px;color:#6c757d;font-size:12px;text-align:center;">
+    © {{ business_name }} · This is an automated message.
+  </div>
+</div>
+</body></html>

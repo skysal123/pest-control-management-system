@@ -1,0 +1,31 @@
+{% extends "admin/_layout.html" %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="mb-0">Services</h2>
+  <a href="{{ url_for('admin.service_new') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Add Service</a>
+</div>
+
+<div class="os-card p-0">
+  <table class="table os-table mb-0">
+    <thead><tr>
+      <th>Name</th><th>Slug</th><th>Status</th><th></th>
+    </tr></thead>
+    <tbody>
+      {% for s in services %}
+      <tr>
+        <td><i class="bi {{ s.icon or 'bi-bug' }} text-primary"></i> {{ s.name }}</td>
+        <td><code>{{ s.slug }}</code></td>
+        <td>
+          {% if s.status=='ACTIVE' %}<span class="badge bg-success">Active</span>
+          {% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}
+        </td>
+        <td><a href="{{ url_for('admin.service_edit', sid=s.id) }}" class="btn btn-sm btn-outline-primary">Edit</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="text-center text-muted py-4">No services yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

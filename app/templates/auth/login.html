@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Login | {{ business_name }}{% endblock %}
+{% block fabs %}{% endblock %}
+
+{% block content %}
+<div class="os-auth-card">
+  <div class="os-card p-4">
+    <div class="text-center mb-4">
+      <div class="display-5">🔐</div>
+      <h4 class="mb-1">Welcome back</h4>
+      <p class="text-muted small mb-0">Sign in to your admin / technician account</p>
+    </div>
+    <form method="post" novalidate>
+      <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" class="form-control" required autofocus value="{{ email or '' }}">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" required>
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="remember" id="remember">
+        <label class="form-check-label" for="remember">Remember me</label>
+      </div>
+      <button class="btn btn-primary w-100">Sign In</button>
+    </form>
+  </div>
+  <p class="text-center text-muted small mt-3">
+    <a href="{{ url_for('public.home') }}"><i class="bi bi-arrow-left"></i> Back to website</a>
+  </p>
+</div>
+{% endblock %}

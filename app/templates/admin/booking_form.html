@@ -1,0 +1,77 @@
+{% extends "admin/_layout.html" %}
+
+{% block admin_content %}
+<h2 class="mb-4">New Booking {% if lead %}<small class="text-muted">from Lead #{{ lead.id }}</small>{% endif %}</h2>
+
+<div class="os-card p-4">
+  <form method="post">
+    <h5 class="mb-3">Customer</h5>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Name *</label>
+        <input type="text" name="name" class="form-control" required value="{{ lead.customer.name if lead else '' }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Phone *</label>
+        <input type="tel" name="phone" class="form-control" required value="{{ lead.customer.phone if lead else '' }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" class="form-control" value="{{ lead.customer.email if lead and lead.customer.email else '' }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">City</label>
+        <input type="text" name="city" class="form-control" value="{{ lead.customer.city if lead and lead.customer.city else '' }}">
+      </div>
+      <div class="col-12">
+        <label class="form-label">Address</label>
+        <input type="text" name="address" class="form-control" value="{{ lead.customer.address if lead and lead.customer.address else '' }}">
+      </div>
+    </div>
+
+    <h5 class="mt-4 mb-3">Service</h5>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Service *</label>
+        <select name="service_id" class="form-select" required>
+          <option value="">— Select —</option>
+          {% for s in services %}
+          <option value="{{ s.id }}" {% if lead and lead.service_id==s.id %}selected{% endif %}>{{ s.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Date *</label>
+        <input type="date" name="booking_date" class="form-control" required value="{{ lead.preferred_date.isoformat() if lead and lead.preferred_date else '' }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Time</label>
+        <input type="time" name="booking_time" class="form-control">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Assign Technician</label>
+        <select name="technician_id" class="form-select">
+          <option value="">— Assign later —</option>
+          {% for t in technicians %}
+          <option value="{{ t.id }}">{{ t.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Status</label>
+        <select name="status" class="form-select">
+          {% for st in ['Pending','Confirmed','Assigned'] %}
+          <option value="{{ st }}">{{ st }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if lead %}<input type="hidden" name="lead_id" value="{{ lead.id }}">{% endif %}
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+      <button class="btn btn-primary">Create Booking</button>
+      <a href="{{ url_for('admin.bookings') }}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
