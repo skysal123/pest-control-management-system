@@ -2,7 +2,7 @@
   <div class="container">
     <div class="row g-4">
       <div class="col-md-4">
-        <h6><i class="bi bi-shield-shaded"></i> {{ business_name }}</h6>
+        <img src="{{ url_for('static', filename='images/spms logo.png') }}" alt="{{ business_name }} Logo" style="height: 60px; width: auto; margin-bottom: 1rem;">
         <p class="small">Trusted pest control experts protecting homes and businesses with safe, effective treatments.</p>
         <div class="d-flex gap-2">
           <a href="#" class="btn btn-sm btn-outline-light"><i class="bi bi-facebook"></i></a>
@@ -16,6 +16,7 @@
           <li><a href="{{ url_for('public.home') }}">Home</a></li>
           <li><a href="{{ url_for('public.about') }}">About Us</a></li>
           <li><a href="{{ url_for('public.services') }}">Services</a></li>
+          <li><a href="{{ url_for('public.get_started') }}">Enquire / Book Now</a></li>
           <li><a href="{{ url_for('public.contact') }}">Contact / Enquiry</a></li>
         </ul>
       </div>

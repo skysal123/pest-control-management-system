@@ -1,0 +1,86 @@
+{% extends "technician/_layout.html" %}
+
+{% block title %}My Schedule · {{ business_name }}{% endblock %}
+{% block page_title %}My Schedule{% endblock %}
+
+{% block tech_content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <div>
+    <h2 class="mb-1">My Schedule</h2>
+    <p class="text-muted mb-0 small">
+      Week of {{ week[0].day.strftime('%d %b') }} – {{ week[6].day.strftime('%d %b %Y') }}
+      · {{ total_jobs }} job{{ '' if total_jobs == 1 else 's' }}
+      · {{ (total_minutes / 60)|round(1) }} h booked
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('technician.schedule', week=prev_week.isoformat()) }}">
+      <i class="bi bi-chevron-left"></i> Prev
+    </a>
+    <a class="btn btn-sm btn-outline-primary" href="{{ url_for('technician.schedule') }}">This week</a>
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('technician.schedule', week=next_week.isoformat()) }}">
+      Next <i class="bi bi-chevron-right"></i>
+    </a>
+  </div>
+</div>
+
+<div class="os-week-grid">
+  {% for item in week %}
+  {% set av = item.availability %}
+  <div class="os-week-col {% if item.day == today %}is-today{% endif %}">
+    <div class="wc-head">
+      <span class="wc-dow">{{ item.day.strftime('%a') }}</span>
+      <span class="wc-dom">{{ item.day.day }}</span>
+      {% if item.day == today %}<span class="wc-badge">Today</span>{% endif %}
+    </div>
+
+    {% if av.on_leave %}
+      <div class="wc-note is-leave">
+        <i class="bi bi-airplane"></i>
+        {{ av.leave_reason or 'On leave' }}
+      </div>
+    {% elif not av.working %}
+      <div class="wc-note is-off">
+        <i class="bi bi-moon-stars"></i> Not working
+      </div>
+    {% else %}
+      <div class="wc-hours">
+        <i class="bi bi-clock"></i> {{ av.window_start.strftime('%H:%M') }} – {{ av.window_end.strftime('%H:%M') }}
+      </div>
+      <div class="wc-meter" title="{{ av.load_percent }}% booked">
+        <span style="width: {{ av.load_percent }}%"></span>
+      </div>
+
+      <div class="wc-jobs">
+        {% for block in av.blocks %}
+        <a class="wc-job status-{{ block.status|lower|replace(' ', '-') }}"
+           href="{{ url_for('technician.job_detail', booking_id=block.booking.id) }}">
+          <span class="wj-time">{{ block.start_label }} – {{ block.end_label }}</span>
+          <span class="wj-cust">{{ block.customer_name }}</span>
+          <span class="wj-svc">{{ block.service_name }}</span>
+          {% if block.booking.address %}
+          <span class="wj-addr"><i class="bi bi-geo-alt"></i> {{ block.booking.address }}</span>
+          {% endif %}
+        </a>
+        {% else %}
+        <div class="wc-empty">
+          <i class="bi bi-check2-circle"></i>
+          <span>No jobs</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if av.free_slots %}
+      <div class="wc-free">
+        {% for s, e in av.free_slots %}
+        <span class="os-chip is-open">
+          {{ s // 60 }}:{{ '%02d' % (s % 60) }} – {{ e // 60 }}:{{ '%02d' % (e % 60) }}
+        </span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

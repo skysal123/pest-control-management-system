@@ -1,0 +1,99 @@
+{% set _selected = form.service_id if (form and form.service_id) else '' %}
+{% set _preselect = preselect_slug or '' %}
+{% set _cat_label = cat_label|default('Service Category') %}
+{% set _svc_label = svc_label|default('Service Required') %}
+{% set _cat_placeholder = cat_placeholder|default('— Select category —') %}
+<div class="service-picker row g-3" data-selected="{{ _selected }}" data-preselect="{{ _preselect }}">
+  <div class="col-md-6">
+    <label class="form-label">{{ _cat_label }}</label>
+    <select class="form-select js-cat" name="service_category">
+      <option value="">{{ _cat_placeholder }}</option>
+      {% for category in service_map.keys() %}
+      <option value="{{ category }}">{{ category }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">{{ _svc_label }}</label>
+    <select name="service_id" class="form-select js-svc">
+      <option value="">— Select a service —</option>
+    </select>
+  </div>
+  <script type="application/json" class="js-map">{{ service_map|tojson }}</script>
+</div>
+
+<script>
+  (function () {
+    document.querySelectorAll('.service-picker').forEach(function (picker) {
+      if (picker.dataset.bound) return;
+      picker.dataset.bound = '1';
+
+      var mapNode = picker.querySelector('.js-map');
+      var map = mapNode ? JSON.parse(mapNode.textContent) : {};
+      var catSel = picker.querySelector('.js-cat');
+      var svcSel = picker.querySelector('.js-svc');
+      var selectedId = picker.getAttribute('data-selected') || '';
+      var preselect = picker.getAttribute('data-preselect') || '';
+
+      function fill(category, keepValue) {
+        svcSel.innerHTML = '<option value="">— Select a service —</option>';
+        (map[category] || []).forEach(function (s) {
+          var opt = document.createElement('option');
+          opt.value = s.id;
+          opt.textContent = s.name;
+          if (keepValue && String(s.id) === String(keepValue)) opt.selected = true;
+          svcSel.appendChild(opt);
+        });
+      }
+
+      function categoryOf(value) {
+        for (var cat in map) {
+          if (map[cat].some(function (s) { return String(s.id) === String(value); })) return cat;
+        }
+        return '';
+      }
+
+      function idOfSlug(slug) {
+        for (var cat in map) {
+          var hit = map[cat].find(function (s) {
+            return s.slug === slug || (s.match && s.match.indexOf(slug) !== -1);
+          });
+          if (hit) return String(hit.id);
+        }
+        return '';
+      }
+
+      var initVal = '';
+      if (selectedId) initVal = String(selectedId);
+      else if (preselect) initVal = idOfSlug(preselect);
+
+      var initCat = initVal ? categoryOf(initVal) : '';
+      if (initCat) catSel.value = initCat;
+      fill(initCat, initVal);
+
+      catSel.addEventListener('change', function () {
+        fill(catSel.value, '');
+        svcSel.focus();
+      });
+
+      // Programmatic selection: picker.dispatchEvent(
+      //   new CustomEvent('service-picker:select', { detail: { id: '12' } }))
+      // or { detail: { name: 'Termite Treatment' } }
+      picker.addEventListener('service-picker:select', function (e) {
+        var detail = e.detail || {};
+        var id = detail.id ? String(detail.id) : '';
+        if (!id && detail.name) {
+          for (var cat in map) {
+            var hit = (map[cat] || []).find(function (s) { return s.name === detail.name; });
+            if (hit) { id = String(hit.id); break; }
+          }
+        }
+        if (!id) return;
+        var targetCat = categoryOf(id);
+        if (!targetCat) return;
+        catSel.value = targetCat;
+        fill(targetCat, id);
+      });
+    });
+  })();
+</script>

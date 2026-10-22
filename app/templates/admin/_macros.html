@@ -1,0 +1,14 @@
+{% macro page_header(title, subtitle=None, section='Admin') %}
+<div class="os-page-header d-flex justify-content-between align-items-end flex-wrap gap-2">
+  <div>
+    <nav class="os-breadcrumb">
+      <span>{{ section }}</span>
+      <i class="bi bi-chevron-right"></i>
+      <span>{{ title }}</span>
+    </nav>
+    <h1 class="os-page-title">{{ title }}</h1>
+    {% if subtitle %}<p class="os-page-subtitle">{{ subtitle }}</p>{% endif %}
+  </div>
+  {% if caller %}<div class="os-page-header-actions d-flex flex-wrap gap-2">{{ caller() }}</div>{% endif %}
+</div>
+{% endmacro %}

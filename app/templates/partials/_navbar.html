@@ -1,18 +1,37 @@
 <nav class="navbar navbar-expand-lg os-navbar sticky-top">
   <div class="container">
-    <a class="navbar-brand" href="{{ url_for('public.home') }}">
-      <i class="bi bi-shield-shaded text-primary"></i>
-      {{ business_name }}
+    <a class="navbar-brand d-flex flex-column align-items-start" href="{{ url_for('public.home') }}">
+      <img src="{{ url_for('static', filename='images/logo without text.png') }}" alt="{{ business_name }} Logo" class="navbar-logo">
+      <span class="navbar-logo-text">{{ business_name }}</span>
     </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+
+    <!-- Mobile Login/User Button (Replaces Hamburger) -->
+    <div class="d-lg-none">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-box-arrow-right"></i>
+        </a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-sm">
+          <i class="bi bi-person-circle"></i>
+        </a>
+      {% endif %}
+    </div>
+
+    <button class="navbar-toggler d-none" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="nav">
       <ul class="navbar-nav ms-auto align-items-lg-center">
-        <li class="nav-item"><a class="nav-link {% if request.endpoint=='public.home' %}active{% endif %}" href="{{ url_for('public.home') }}">Home</a></li>
-        <li class="nav-item"><a class="nav-link {% if request.endpoint=='public.about' %}active{% endif %}" href="{{ url_for('public.about') }}">About</a></li>
-        <li class="nav-item"><a class="nav-link {% if request.endpoint in ['public.services','public.service_detail'] %}active{% endif %}" href="{{ url_for('public.services') }}">Services</a></li>
-        <li class="nav-item"><a class="nav-link {% if request.endpoint=='public.contact' %}active{% endif %}" href="{{ url_for('public.contact') }}">Contact</a></li>
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='public.home' %}active{% endif %}" href="{{ url_for('public.home') }}"><i class="bi bi-house-door-fill os-nav-ico ico-home"></i>Home</a></li>
+        <li class="nav-item"><a class="nav-link {% if request.endpoint in ['public.services','public.service_detail','public.cleaning_services','public.pest_control_services','public.bird_netting_services'] %}active{% endif %}" href="{{ url_for('public.services') }}"><i class="bi bi-grid-fill os-nav-ico ico-services"></i>Services</a></li>
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='public.contact' %}active{% endif %}" href="{{ url_for('public.contact') }}"><i class="bi bi-envelope-fill os-nav-ico ico-contact"></i>Contact</a></li>
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='public.about' %}active{% endif %}" href="{{ url_for('public.about') }}"><i class="bi bi-info-circle-fill os-nav-ico ico-about"></i>About</a></li>
+        <li class="nav-item ms-lg-2 my-1 my-lg-0">
+          <a class="btn btn-primary btn-sm w-100" href="{{ url_for('public.get_started') }}">
+            <i class="bi bi-lightning-charge-fill"></i> Get Quote / Book
+          </a>
+        </li>
 
         {% if current_user.is_authenticated %}
           {% if current_user.is_admin %}

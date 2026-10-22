@@ -3,18 +3,138 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>document.documentElement.classList.add('js');</script>
   <title>{% block title %}{{ business_name }}{% endblock %}</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22>🛡️</text></svg>">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}?v={{ asset_version }}" rel="stylesheet">
+  <style>
+    /* Navbar Logo sizing */
+    .navbar-logo {
+        height: 40px;
+        width: auto;
+    }
+    .navbar-logo-text {
+        font-size: 0.9rem;
+        font-weight: 800;
+        line-height: 1.2;
+        color: #000;
+        text-transform: uppercase;
+        margin-top: 2px;
+    }
+    @media (max-width: 991px) {
+        .navbar-logo {
+            height: 50px;
+        }
+        .navbar-logo-text {
+            font-size: 0.8rem;
+        }
+    }
+
+    /* Bottom Navigation Bar for Mobile */
+    .os-bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #0B1F3A;
+        box-shadow: 0 -6px 22px rgba(11, 31, 58, .38);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        padding: 10px 0;
+        z-index: 1050;
+        border-top: 1px solid rgba(255, 215, 0, .22);
+    }
+    .os-bottom-nav-item {
+        text-decoration: none;
+        color: #FFFFFF;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-size: 0.7rem;
+        transition: color .2s;
+        flex: 1;
+        position: relative;
+    }
+    .os-bottom-nav-item i {
+        font-size: 1.4rem;
+        margin-bottom: 2px;
+    }
+    .os-bottom-nav-item:hover,
+    .os-bottom-nav-item:active {
+        color: #F4B400;
+    }
+    .os-bottom-nav-item.active {
+        color: #FFD700;
+    }
+    .os-bottom-nav-item.active::before {
+        content: "";
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 24px;
+        height: 3px;
+        border-radius: 3px;
+        background: #FFD700;
+    }
+    .os-bottom-nav .ico-home,
+    .os-bottom-nav .ico-services,
+    .os-bottom-nav .ico-contact { color: #FFFFFF; }
+    .os-bottom-nav .ico-whatsapp { color: #25D366; }
+    .os-bottom-nav-item.cta {
+        margin: 0 .35rem;
+        padding: .35rem .5rem;
+        border-radius: 999px;
+        background: #E63946;
+        color: #FFFFFF;
+        box-shadow: 0 4px 12px rgba(230, 57, 70, .38);
+    }
+    .os-bottom-nav-item.cta i { color: #FFFFFF; }
+    .os-bottom-nav-item.cta:hover,
+    .os-bottom-nav-item.cta:active {
+        background: #F4B400;
+        color: #0B1F3A;
+    }
+    .os-bottom-nav-item.cta:hover i,
+    .os-bottom-nav-item.cta:active i { color: #0B1F3A; }
+    /* Adjust main content to avoid overlap with bottom nav */
+    body {
+        padding-bottom: 70px;
+    }
+    /* Hide bottom nav on desktop */
+    @media (min-width: 992px) {
+        .os-bottom-nav {
+            display: none;
+        }
+        body {
+            padding-bottom: 0;
+        }
+    }
+    /* Adjust FABs for bottom nav */
+    @media (max-width: 991px) {
+        .os-fab {
+            bottom: 80px !important;
+        }
+        .os-fab.whatsapp {
+            bottom: 80px !important;
+            right: 18px;
+        }
+        .os-fab.call {
+            bottom: 140px !important;
+            right: 18px;
+        }
+    }
+  </style>
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100">
 
 {% include "partials/_topbar.html" %}
 {% include "partials/_navbar.html" %}
 
-<main>
+<main class="flex-grow-1">
   <div class="container">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -35,10 +155,35 @@
 
 {% include "partials/_footer.html" %}
 
-{% block fabs %}
-<a href="tel:{{ business_phone|e }}" class="os-fab call" title="Call us"><i class="bi bi-telephone-fill"></i></a>
-<a href="https://wa.me/{{ business_whatsapp|e }}?text=Hi%2C%20I%20need%20pest%20control%20service." target="_blank" rel="noopener" class="os-fab whatsapp" title="Chat on WhatsApp"><i class="bi bi-whatsapp"></i></a>
-{% endblock %}
+<!-- Bottom Navigation for Mobile -->
+<div class="os-bottom-nav d-lg-none">
+    <a href="{{ url_for('public.home') }}" class="os-bottom-nav-item {% if request.endpoint == 'public.home' %}active{% endif %}">
+        <i class="bi bi-house-fill ico-home"></i>
+        <span>Home</span>
+    </a>
+    <a href="{{ url_for('public.services') }}" class="os-bottom-nav-item {% if request.endpoint in ['public.services', 'public.service_detail', 'public.cleaning_services', 'public.pest_control_services', 'public.bird_netting_services'] %}active{% endif %}">
+        <i class="bi bi-grid-fill ico-services"></i>
+        <span>Services</span>
+    </a>
+    <a href="tel:{{ business_phone }}" class="os-bottom-nav-item">
+        <i class="bi bi-telephone-fill ico-contact"></i>
+        <span>Call Us</span>
+    </a>
+    <a href="https://wa.me/{{ business_whatsapp|e }}?text=Hi%2C%20I%20need%20pest%20control%20service." target="_blank" class="os-bottom-nav-item">
+        <i class="bi bi-whatsapp ico-whatsapp"></i>
+        <span>WhatsApp</span>
+    </a>
+    <a href="{{ url_for('public.get_started', mode='enquire') }}"
+       class="os-bottom-nav-item cta {% if request.endpoint == 'public.get_started' %}active{% endif %}"
+       data-bs-toggle="modal" data-bs-target="#quoteModal">
+        <i class="bi bi-tags ico-quote"></i>
+        <span>Get Quote</span>
+    </a>
+</div>
+
+{% block fabs %}{% endblock %}
+
+{% include "partials/_quote_modal.html" %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>

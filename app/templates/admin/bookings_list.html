@@ -1,10 +1,10 @@
 {% extends "admin/_layout.html" %}
+{% from "admin/_macros.html" import page_header %}
 
 {% block admin_content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h2 class="mb-0">Bookings</h2>
+{% call page_header('Bookings', 'Schedule and track service jobs') %}
   <a href="{{ url_for('admin.booking_new') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> New Booking</a>
-</div>
+{% endcall %}
 
 <form method="get" class="row g-2 mb-3">
   <div class="col-md-4">

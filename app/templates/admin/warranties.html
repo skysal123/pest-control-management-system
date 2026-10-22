@@ -1,7 +1,8 @@
 {% extends "admin/_layout.html" %}
+{% from "admin/_macros.html" import page_header %}
 
 {% block admin_content %}
-<h2 class="mb-4">Warranty Management</h2>
+{{ page_header('Warranty Management', 'Track active and expiring service warranties') }}
 <p class="text-muted small">
   Each completed booking carries a {{ warranty_days }}-day warranty. Reminders go out
   {{ warranty_days_before }} days and 1 day before expiry.

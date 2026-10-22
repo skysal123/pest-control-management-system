@@ -1,7 +1,8 @@
 {% extends "admin/_layout.html" %}
+{% from "admin/_macros.html" import page_header %}
 
 {% block admin_content %}
-<h2 class="mb-4">Customer Feedback</h2>
+{{ page_header('Customer Feedback', 'What your customers are saying') }}
 
 {% for f in feedback %}
 <div class="os-card p-3 mb-2">

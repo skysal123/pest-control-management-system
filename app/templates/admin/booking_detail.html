@@ -13,7 +13,31 @@
       <p class="mb-1"><strong>{{ booking.customer.name }}</strong></p>
       <p class="mb-1"><i class="bi bi-telephone"></i> {{ booking.customer.phone }}</p>
       <p class="mb-1"><i class="bi bi-envelope"></i> {{ booking.customer.email or '—' }}</p>
-      <p class="mb-0"><i class="bi bi-geo-alt"></i> {{ booking.address or booking.customer.address or '—' }}</p>
+      <p class="mb-3"><i class="bi bi-geo-alt"></i> {{ booking.address or booking.customer.address or '—' }}</p>
+      {% if wa_link(booking.customer.phone) %}
+      <a href="{{ wa_link(booking.customer.phone, 'Hi ' ~ booking.customer.name ~ ', regarding your ' ~ booking.service.name ~ ' booking #' ~ booking.id) }}"
+         target="_blank" class="btn btn-sm btn-outline-success">
+        <i class="bi bi-whatsapp"></i> WhatsApp Customer
+      </a>
+      {% if appointment_wa_text(booking) %}
+      <a href="{{ wa_link(booking.customer.phone, appointment_wa_text(booking)) }}"
+         target="_blank" class="btn btn-sm btn-outline-success" title="Opens WhatsApp with the appointment message ready to send">
+        <i class="bi bi-send-check"></i> Open WhatsApp &amp; send
+      </a>
+      {% endif %}
+      <form method="post" action="{{ url_for('admin.booking_resend_whatsapp', booking_id=booking.id) }}"
+            class="d-inline">
+        <button class="btn btn-sm btn-outline-success">
+          <i class="bi bi-send"></i> Send "Appointment Booked" WhatsApp
+        </button>
+      </form>
+      <p class="text-muted small mb-0 mt-2">
+        If the API send fails (e.g. the customer has not joined the Twilio
+        sandbox), use <strong>Open WhatsApp &amp; send</strong> - the message is
+        pre-filled, so you only have to tap send from your own WhatsApp
+        ({{ business_whatsapp }}).
+      </p>
+      {% endif %}
     </div>
 
     <div class="os-card p-4 mb-3">
@@ -58,16 +82,6 @@
         {% if booking.status == 'Pending' %}
           <button name="action" value="confirm" class="btn btn-primary">Confirm Booking</button>
         {% endif %}
-        {% if booking.status in ['Pending','Confirmed'] %}
-          <div class="input-group">
-            <select name="technician_id" class="form-select">
-              {% for t in technicians %}
-              <option value="{{ t.id }}" {% if booking.technician_id==t.id %}selected{% endif %}>{{ t.name }}</option>
-              {% endfor %}
-            </select>
-            <button name="action" value="assign" class="btn btn-primary">Assign Technician</button>
-          </div>
-        {% endif %}
         {% if booking.status == 'Assigned' %}
           <button name="action" value="start" class="btn btn-primary">Mark In Progress</button>
         {% endif %}
@@ -80,6 +94,63 @@
         {% endif %}
       </form>
     </div>
+
+    {% if booking.status in ['Pending','Confirmed'] %}
+    <div class="os-card p-4 mb-3">
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <h5 class="mb-0">Assign Technician</h5>
+        {% if suggestion_summary %}
+        <span class="ms-auto os-chip is-open">{{ suggestion_summary.free }} free</span>
+        {% endif %}
+      </div>
+      <p class="text-muted small mb-3">
+        {% if booking.booking_time %}
+          Availability for {{ booking.booking_date.strftime('%d %b %Y') }} at {{ booking.booking_time }}
+          ({{ booking.duration_minutes }} min job).
+        {% else %}
+          No start time set — availability is shown for the whole day.
+        {% endif %}
+      </p>
+
+      {% if suggestions %}
+      <div class="os-sched-menu p-0 mb-3" style="max-height:none;">
+        {% for s in suggestions %}
+        <div class="os-sched-opt {% if not s.available %}is-busy{% endif %}">
+          <div class="flex-grow-1 min-w-0">
+            <span class="opt-name">{{ s.tech.name }}</span>
+            <span class="d-block small text-muted">
+              {% if s.availability.on_leave %}On leave
+              {% elif not s.availability.working %}Not working
+              {% elif not s.availability.skills_ok %}Not qualified for {{ booking.service.name }}
+              {% elif s.clashes %}{{ s.reason }}
+              {% else %}{{ s.reason }}{% endif %}
+            </span>
+          </div>
+          {% if s.available %}
+          <form method="post" action="{{ url_for('admin.booking_assign', booking_id=booking.id) }}">
+            <input type="hidden" name="technician_id" value="{{ s.tech.id }}">
+            <button class="btn btn-sm btn-primary">Assign</button>
+          </form>
+          {% else %}
+          <span class="os-chip is-off">{{ s.reason }}</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-muted small">No active technicians found.</p>
+      {% endif %}
+
+      {% if booking.technician_id %}
+      <form method="post" action="{{ url_for('admin.booking_update', booking_id=booking.id) }}"
+            class="d-grid gap-2 mt-2 pt-2 border-top">
+        <input type="hidden" name="action" value="assign">
+        <input type="hidden" name="technician_id" value="{{ booking.technician_id }}">
+        <button class="btn btn-outline-secondary">Re-assign to {{ booking.technician.name }}</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
 
     <div class="os-card p-4">
       <h5>Edit Details</h5>

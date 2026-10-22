@@ -1,40 +1,117 @@
 {% extends "admin/_layout.html" %}
+{% from "admin/_macros.html" import page_header %}
+
+{% block title %}{{ 'Edit' if tech else 'Add' }} Technician · {{ business_name }}{% endblock %}
+{% block page_title %}{{ 'Edit' if tech else 'Add' }} Technician{% endblock %}
 
 {% block admin_content %}
-<h2 class="mb-4">{{ 'Edit' if tech else 'Add' }} Technician</h2>
+{% call page_header(
+     'Edit Technician' if tech else 'Add Technician',
+     'Account details, working hours, skills and availability'
+   ) %}
+  <a href="{{ url_for('admin.technicians') }}" class="btn btn-outline-secondary">Back</a>
+{% endcall %}
 
-<div class="os-card p-4">
-  <form method="post">
-    <div class="row g-3">
-      <div class="col-md-6">
-        <label class="form-label">Name *</label>
-        <input type="text" name="name" class="form-control" required value="{{ tech.name if tech else '' }}">
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">Email *</label>
-        <input type="email" name="email" class="form-control" required value="{{ tech.email if tech else '' }}">
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">Phone</label>
-        <input type="tel" name="phone" class="form-control" value="{{ tech.phone if tech and tech.phone else '' }}">
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">Password {% if not tech %}*{% else %}(leave blank to keep){% endif %}</label>
-        <input type="password" name="password" class="form-control" {% if not tech %}required{% endif %}>
-      </div>
-      {% if tech %}
-      <div class="col-12">
-        <div class="form-check">
-          <input class="form-check-input" type="checkbox" name="is_active" id="active" {% if tech.is_active %}checked{% endif %}>
-          <label class="form-check-label" for="active">Active</label>
+<form method="post">
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="os-card p-4 mb-3">
+        <h5 class="mb-3">Account</h5>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Name *</label>
+            <input type="text" name="name" class="form-control" required value="{{ tech.name if tech else '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email *</label>
+            <input type="email" name="email" class="form-control" required value="{{ tech.email if tech else '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Phone</label>
+            <input type="tel" name="phone" class="form-control" value="{{ tech.phone if tech and tech.phone else '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">WhatsApp Number <small class="text-muted">(alerts)</small></label>
+            <input type="tel" name="whatsapp" class="form-control" placeholder="918600503040" value="{{ tech.whatsapp if tech and tech.whatsapp else '' }}">
+            <div class="form-text">With country code, e.g. 91XXXXXXXXXX. Leave blank to skip WhatsApp alerts.</div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Password {% if not tech %}*{% else %}(leave blank to keep){% endif %}</label>
+            <input type="password" name="password" class="form-control" {% if not tech %}required{% endif %}>
+          </div>
+          {% if tech %}
+          <div class="col-12">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" name="is_active" id="active" {% if tech.is_active %}checked{% endif %}>
+              <label class="form-check-label" for="active">Active — can log in and receive jobs</label>
+            </div>
+          </div>
+          {% endif %}
         </div>
       </div>
-      {% endif %}
     </div>
-    <div class="mt-4 d-flex gap-2">
-      <button class="btn btn-primary">Save</button>
-      <a href="{{ url_for('admin.technicians') }}" class="btn btn-outline-secondary">Cancel</a>
+
+    <div class="col-lg-6">
+      <div class="os-card p-4 mb-3">
+        <h5 class="mb-1">Working hours</h5>
+        <p class="text-muted small mb-3">The time window this technician is available for jobs on the schedule board.</p>
+        <div class="row g-3">
+          <div class="col-6">
+            <label class="form-label">Day starts</label>
+            <input type="time" name="work_start" class="form-control"
+                   value="{{ tech.work_start if tech and tech.work_start else '09:00' }}">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Day ends</label>
+            <input type="time" name="work_end" class="form-control"
+                   value="{{ tech.work_end if tech and tech.work_end else '20:00' }}">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Working days</label>
+            <div class="row g-2">
+              {% for label, num in [('Mon', 0), ('Tue', 1), ('Wed', 2), ('Thu', 3), ('Fri', 4), ('Sat', 5), ('Sun', 6)] %}
+              <div class="col">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="work_days" value="{{ num }}"
+                         id="wd{{ num }}"
+                         {% if tech and num in tech.work_day_numbers %}checked{% elif not tech %}checked{% endif %}>
+                  <label class="form-check-label" for="wd{{ num }}">{{ label }}</label>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            <div class="form-text">Unchecked days are blocked on the schedule board.</div>
+          </div>
+        </div>
+      </div>
     </div>
-  </form>
-</div>
+  </div>
+
+  <div class="os-card p-4 mb-3">
+    <h5 class="mb-1">Skills</h5>
+    <p class="text-muted small mb-3">
+      Services this technician is trained for. When nothing is ticked the technician
+      can be given any job.
+    </p>
+    <div class="row g-2">
+      {% for s in services %}
+      <div class="col-md-6 col-lg-4">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="skills" value="{{ s.id }}"
+                 id="sk{{ s.id }}"
+                 {% if tech and s.id in tech.service_ids %}checked{% endif %}>
+          <label class="form-check-label" for="sk{{ s.id }}">{{ s.name }}</label>
+        </div>
+      </div>
+      {% else %}
+      <div class="col-12 text-muted small">No services in the catalogue yet.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary">Save Technician</button>
+    <a href="{{ url_for('admin.technicians') }}" class="btn btn-outline-secondary">Cancel</a>
+  </div>
+</form>
 {% endblock %}

@@ -1,113 +1,215 @@
 {% extends "admin/_layout.html" %}
 {% block title %}Dashboard · Admin{% endblock %}
 
+{% set lead_pills = {'new':'new','contacted':'contacted','follow-up required':'followup','booking created':'booking','closed':'closed','cancelled':'cancelled'} %}
+{% set booking_pills = {'pending':'pending','confirmed':'confirmed','assigned':'assigned','in progress':'inprogress','completed':'completed','cancelled':'cancelled'} %}
+
 {% block admin_content %}
-<h2 class="mb-4">Dashboard</h2>
+<section class="os-hero-banner">
+  <div class="hb-inner">
+    <div>
+      <h2>{{ greeting }}, {{ current_user.name }} 👋</h2>
+      <p>{% if today %}{{ today.strftime('%A, %d %B %Y') }} · {% endif %}Here's what's happening with your service operations today.</p>
+    </div>
+    <div class="os-hero-actions">
+      <a href="{{ url_for('admin.lead_new') }}" class="btn btn-light"><i class="bi bi-plus-lg"></i> New Lead</a>
+      <a href="{{ url_for('admin.booking_new') }}" class="btn btn-light"><i class="bi bi-calendar-plus"></i> New Booking</a>
+      <a href="{{ url_for('admin.technician_new') }}" class="btn btn-outline-light"><i class="bi bi-person-plus"></i> Add Technician</a>
+    </div>
+  </div>
+</section>
 
-<div class="row g-3 mb-4">
-  <div class="col-6 col-md-3">
-    <div class="os-stat-card"><div class="label">Total Leads</div><div class="value">{{ stats.total_leads }}</div></div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="os-stat-card warning"><div class="label">New Enquiries</div><div class="value">{{ stats.new_leads }}</div></div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="os-stat-card info"><div class="label">Upcoming Bookings</div><div class="value">{{ stats.upcoming_bookings }}</div></div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="os-stat-card success"><div class="label">Completed</div><div class="value">{{ stats.completed }}</div></div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="os-stat-card warning"><div class="label">Pending Jobs</div><div class="value">{{ stats.pending_jobs }}</div></div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="os-stat-card"><div class="label">Feedback</div><div class="value">{{ stats.feedback_count }}</div></div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="os-stat-card success"><div class="label">Avg Rating</div><div class="value">{% if stats.avg_rating %}{{ '%0.1f' % stats.avg_rating }}{% else %}—{% endif %} ★</div></div>
-  </div>
+<div class="os-page-header">
+  <nav class="os-breadcrumb">
+    <span>Admin</span>
+    <i class="bi bi-chevron-right"></i>
+    <span>Dashboard</span>
+  </nav>
+  <h1 class="os-page-title">Dashboard</h1>
+  <p class="os-page-subtitle">Overview for <strong>{{ period_label }}</strong>{% if period_start %} · since {{ period_start.strftime('%d %b %Y') }}{% endif %}</p>
 </div>
 
-<div class="row g-4">
-  <div class="col-lg-6">
-    <div class="os-card p-4">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0">Recent Leads</h5>
-        <a class="small" href="{{ url_for('admin.leads') }}">View all →</a>
-      </div>
+<div class="os-period-filter" role="group" aria-label="Filter statistics by period">
+  {% for key, label in periods %}
+    <a href="{{ url_for('admin.dashboard', period=key) }}"
+       class="os-period-btn {% if period == key %}active{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<div class="os-stats-grid">
+  <a class="os-stat" href="{{ url_for('admin.leads', period=period) }}">
+    <span class="os-stat-icon"><i class="bi bi-inbox"></i></span>
+    <span class="os-stat-body">
+      <span class="os-stat-label">Total Leads</span>
+      <span class="os-stat-value">{{ stats.total_leads }}</span>
+    </span>
+    <i class="bi bi-chevron-right os-stat-arrow"></i>
+  </a>
+  <a class="os-stat tone-warning" href="{{ url_for('admin.leads', status='New', period=period) }}">
+    <span class="os-stat-icon tone-warning"><i class="bi bi-lightning-charge"></i></span>
+    <span class="os-stat-body">
+      <span class="os-stat-label">New Enquiries</span>
+      <span class="os-stat-value">{{ stats.new_leads }}</span>
+    </span>
+    <i class="bi bi-chevron-right os-stat-arrow"></i>
+  </a>
+  <a class="os-stat tone-info" href="{{ url_for('admin.bookings') }}">
+    <span class="os-stat-icon tone-info"><i class="bi bi-calendar-plus"></i></span>
+    <span class="os-stat-body">
+      <span class="os-stat-label">Bookings Booked</span>
+      <span class="os-stat-value">{{ stats.bookings_created }}</span>
+    </span>
+    <i class="bi bi-chevron-right os-stat-arrow"></i>
+  </a>
+  <a class="os-stat tone-info" href="{{ url_for('admin.bookings') }}">
+    <span class="os-stat-icon tone-info"><i class="bi bi-calendar-event"></i></span>
+    <span class="os-stat-body">
+      <span class="os-stat-label">Upcoming Bookings</span>
+      <span class="os-stat-value">{{ stats.upcoming_bookings }}</span>
+    </span>
+    <i class="bi bi-chevron-right os-stat-arrow"></i>
+  </a>
+  <a class="os-stat tone-success" href="{{ url_for('admin.bookings', status='Completed') }}">
+    <span class="os-stat-icon tone-success"><i class="bi bi-check2-circle"></i></span>
+    <span class="os-stat-body">
+      <span class="os-stat-label">Completed</span>
+      <span class="os-stat-value">{{ stats.completed }}</span>
+    </span>
+    <i class="bi bi-chevron-right os-stat-arrow"></i>
+  </a>
+  <a class="os-stat tone-violet" href="{{ url_for('admin.bookings') }}">
+    <span class="os-stat-icon tone-violet"><i class="bi bi-tools"></i></span>
+    <span class="os-stat-body">
+      <span class="os-stat-label">Pending Jobs</span>
+      <span class="os-stat-value">{{ stats.pending_jobs }}</span>
+    </span>
+    <i class="bi bi-chevron-right os-stat-arrow"></i>
+  </a>
+  <a class="os-stat tone-info" href="{{ url_for('admin.feedback') }}">
+    <span class="os-stat-icon tone-info"><i class="bi bi-star"></i></span>
+    <span class="os-stat-body">
+      <span class="os-stat-label">Feedback</span>
+      <span class="os-stat-value">{{ stats.feedback_count }}</span>
+    </span>
+    <i class="bi bi-chevron-right os-stat-arrow"></i>
+  </a>
+  <a class="os-stat tone-warning" href="{{ url_for('admin.feedback') }}">
+    <span class="os-stat-icon tone-warning"><i class="bi bi-stars"></i></span>
+    <span class="os-stat-body">
+      <span class="os-stat-label">Average Rating</span>
+      {% if stats.avg_rating %}
+        <span class="os-stat-value">{{ '%0.1f' % stats.avg_rating }} <small class="text-warning">★</small></span>
+      {% else %}
+        <span class="os-stat-value is-empty">Not rated yet</span>
+      {% endif %}
+    </span>
+    <i class="bi bi-chevron-right os-stat-arrow"></i>
+  </a>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-xl-7">
+    <section class="os-panel h-100">
+      <header class="os-panel-head">
+        <h3 class="os-panel-title"><i class="bi bi-inbox me-1"></i> Recent Leads</h3>
+        <a class="os-panel-link" href="{{ url_for('admin.leads') }}">View all leads <i class="bi bi-arrow-right"></i></a>
+      </header>
+      <div class="os-table-scroll">
       {% if recent_leads %}
-      <table class="table table-sm mb-0">
-        <thead><tr><th>#</th><th>Customer</th><th>Service</th><th>Status</th><th></th></tr></thead>
-        <tbody>
-        {% for l in recent_leads %}
-          <tr>
-            <td>{{ l.id }}</td>
-            <td>{{ l.customer.name }}</td>
-            <td>{{ l.service.name if l.service else '—' }}</td>
-            <td><span class="pill {{ l.status|lower|replace(' ', '') }}">{{ l.status }}</span></td>
-            <td><a href="{{ url_for('admin.lead_detail', lead_id=l.id) }}" class="btn btn-sm btn-outline-primary">Open</a></td>
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
+        <table class="table align-middle mb-0">
+          <thead>
+            <tr><th>Lead</th><th>Customer</th><th>Service</th><th>Status</th><th class="text-end">Action</th></tr>
+          </thead>
+          <tbody>
+          {% for l in recent_leads %}
+            <tr>
+              <td class="cell-id">#{{ l.id }}</td>
+              <td class="cell-strong text-truncate">{{ l.customer.name }}</td>
+              <td class="text-truncate">{{ l.service.name if l.service else '—' }}</td>
+              <td><span class="pill {{ lead_pills.get(l.status|lower, '') }}">{{ l.status }}</span></td>
+              <td class="text-end">
+                <a href="{{ url_for('admin.lead_detail', lead_id=l.id) }}" class="btn btn-sm btn-outline-primary">
+                  Open
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
       {% else %}
-        <p class="text-muted small mb-0">No leads yet.</p>
+        <div class="os-empty">
+          <i class="bi bi-inbox"></i><span>No leads yet.</span>
+        </div>
       {% endif %}
-    </div>
+      </div>
+    </section>
   </div>
 
-  <div class="col-lg-6">
-    <div class="os-card p-4">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0">Upcoming Bookings</h5>
-        <a class="small" href="{{ url_for('admin.bookings') }}">View all →</a>
-      </div>
+  <div class="col-xl-5">
+    <section class="os-panel h-100">
+      <header class="os-panel-head">
+        <h3 class="os-panel-title"><i class="bi bi-calendar-event me-1"></i> Upcoming Bookings</h3>
+        <a class="os-panel-link" href="{{ url_for('admin.bookings') }}">View all <i class="bi bi-arrow-right"></i></a>
+      </header>
+      <div class="os-table-scroll">
       {% if upcoming %}
-      <table class="table table-sm mb-0">
-        <thead><tr><th>#</th><th>Customer</th><th>Date</th><th>Status</th><th></th></tr></thead>
-        <tbody>
-        {% for b in upcoming %}
-          <tr>
-            <td>{{ b.id }}</td>
-            <td>{{ b.customer.name }}</td>
-            <td>{{ b.booking_date.strftime('%d %b') }}</td>
-            <td><span class="pill {{ b.status|lower }}">{{ b.status }}</span></td>
-            <td><a href="{{ url_for('admin.booking_detail', booking_id=b.id) }}" class="btn btn-sm btn-outline-primary">Open</a></td>
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
+        <table class="table align-middle mb-0">
+          <thead>
+            <tr><th>#</th><th>Customer</th><th>Date</th><th class="text-end">Action</th></tr>
+          </thead>
+          <tbody>
+          {% for b in upcoming %}
+            <tr>
+              <td class="cell-id">#{{ b.id }}</td>
+              <td class="cell-strong text-truncate">{{ b.customer.name }}</td>
+              <td class="text-truncate">{{ b.booking_date.strftime('%d %b %Y') }}</td>
+              <td class="text-end">
+                <a href="{{ url_for('admin.booking_detail', booking_id=b.id) }}" class="btn btn-sm btn-outline-primary">
+                  Open
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
       {% else %}
-        <p class="text-muted small mb-0">No upcoming bookings.</p>
+        <div class="os-empty">
+          <i class="bi bi-calendar-x"></i><span>No upcoming bookings.</span>
+        </div>
       {% endif %}
-    </div>
-  </div>
-
-  <div class="col-12">
-    <div class="os-card p-4">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0"><i class="bi bi-shield-check text-primary"></i> Expiring Warranties</h5>
-        <a class="small" href="{{ url_for('admin.warranties') }}">All warranties →</a>
       </div>
-      {% if ex_warranties %}
-      <table class="table table-sm mb-0">
-        <thead><tr><th>#</th><th>Customer</th><th>Service</th><th>Completed</th><th>Days Left</th></tr></thead>
-        <tbody>
-        {% for b, days_left in ex_warranties %}
-          <tr>
-            <td>{{ b.id }}</td>
-            <td>{{ b.customer.name }}</td>
-            <td>{{ b.service.name }}</td>
-            <td>{{ b.completed_at.strftime('%d %b %Y') }}</td>
-            <td><span class="badge bg-warning text-dark">{{ days_left }} day(s)</span></td>
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-        <p class="text-muted small mb-0">No warranties expiring soon.</p>
-      {% endif %}
-    </div>
+    </section>
   </div>
 </div>
+
+<section class="os-panel">
+  <header class="os-panel-head">
+    <h3 class="os-panel-title"><i class="bi bi-shield-check me-1"></i> Expiring Warranties</h3>
+    <a class="os-panel-link" href="{{ url_for('admin.warranties') }}">All warranties <i class="bi bi-arrow-right"></i></a>
+  </header>
+  <div class="os-table-scroll">
+  {% if ex_warranties %}
+    <table class="table align-middle mb-0">
+      <thead>
+        <tr><th>#</th><th>Customer</th><th>Service</th><th>Completed</th><th>Days Left</th></tr>
+      </thead>
+      <tbody>
+      {% for b, days_left in ex_warranties %}
+        <tr>
+          <td class="cell-id">#{{ b.id }}</td>
+          <td class="cell-strong text-truncate">{{ b.customer.name }}</td>
+          <td class="text-truncate">{{ b.service.name }}</td>
+          <td class="text-truncate">{{ b.completed_at.strftime('%d %b %Y') }}</td>
+          <td><span class="pill pending">{{ days_left }} day(s)</span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="os-empty">
+      <i class="bi bi-shield-check"></i><span>No warranties expiring soon.</span>
+    </div>
+  {% endif %}
+  </div>
+</section>
 {% endblock %}

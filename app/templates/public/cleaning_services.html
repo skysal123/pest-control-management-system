@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block title %}Cleaning Services | {{ business_name }}{% endblock %}
+
+{% block content %}
+<style>
+    .cleaning-grid {
+        row-gap: 2rem;
+    }
+    .cleaning-card {
+        height: 100%;
+        overflow: hidden;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    .cleaning-thumb {
+        height: 170px;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-color: rgba(13,110,253,.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .cleaning-thumb .placeholder-icon {
+        font-size: 3rem;
+        color: var(--os-primary);
+    }
+    .cleaning-body {
+        padding: 1.25rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+    }
+    .cleaning-desc {
+        font-size: 0.875rem;
+        line-height: 1.5;
+        flex-grow: 1;
+    }
+    .service-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+        text-align: left;
+        margin-top: 1rem;
+    }
+    .service-item h6 {
+        color: var(--os-primary);
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .service-item p {
+        font-size: 0.85rem;
+        line-height: 1.4;
+        margin-bottom: 0;
+    }
+</style>
+
+<section class="os-hero" style="padding: 3rem 0;">
+  <div class="container text-center">
+    <h1 class="display-5">Professional Cleaning Services</h1>
+    <p class="lead mb-0 opacity-75">Pure cleanliness for every environment.</p>
+  </div>
+</section>
+
+<section class="os-section">
+  <div class="container">
+    <div class="os-section-title">
+      <h2>Our Specialized Cleaning</h2>
+      <p>Select a category to view details and book our cleaning solutions.</p>
+    </div>
+
+    <div class="row g-4 cleaning-grid justify-content-center">
+        {% for opt in options %}
+        <div class="col-md-6 col-lg-4">
+            <div class="os-card cleaning-card h-100">
+                {% if opt.image %}
+                <div class="cleaning-thumb" style="background-image: url('{{ url_for('static', filename=opt.image, v='20261019') }}');">
+                </div>
+                {% else %}
+                <div class="cleaning-thumb">
+                    <i class="bi {{ opt.icon }} placeholder-icon"></i>
+                </div>
+                {% endif %}
+                <div class="cleaning-body">
+                    <h5 class="mb-2">{{ opt.name }}</h5>
+                    <p class="text-muted cleaning-desc mb-4">{{ opt.description }}</p>
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#cleaningModal-{{ opt.slug }}">View Details</button>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('public.get_started', mode='book', service=opt.slug) }}" class="btn btn-primary flex-fill">Book Now</a>
+                            <button type="button" class="btn btn-outline-primary flex-fill" data-bs-toggle="modal" data-bs-target="#quoteModal" data-quote-service="{{ opt.name }}">Get Quote</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="cleaningModal-{{ opt.slug }}" tabindex="-1" aria-labelledby="cleaningModalLabel-{{ opt.slug }}" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="cleaningModalLabel-{{ opt.slug }}">{{ opt.name }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+
+                        {% if opt.slug == 'commercial-cleaning' %}
+                        <div class="service-detail-grid">
+                            <div class="service-item">
+                                <h6><i class="bi bi-activity"></i> Gymnasiums</h6>
+                                <p>Ensuring sports and leisure facilities are in excellent hygienic condition for a pleasant visitor experience.</p>
+                            </div>
+                            <div class="service-item">
+                                <h6><i class="bi bi-briefcase"></i> Office Spaces</h6>
+                                <p>Professional cleaning to boost productivity and reflect your company's professionalism to employees.</p>
+                            </div>
+                            <div class="service-item">
+                                <h6><i class="bi bi-calendar-event"></i> Event Cleaning</h6>
+                                <p>Full responsibility for conference rooms and large public gatherings before, during, and after events.</p>
+                            </div>
+                            <div class="service-item">
+                                <h6><i class="bi bi-shop"></i> Pubs & Restaurants</h6>
+                                <p>Rigorous cleaning to exceed health and safety inspection standards for high-traffic food venues.</p>
+                            </div>
+                            <div class="service-item">
+                                <h6><i class="bi bi-wind"></i> Ventilation</h6>
+                                <p>Regular removal of dirt, dust, and debris to prevent hazardous conditions in commercial properties.</p>
+                            </div>
+                        </div>
+                        {% elif opt.slug == 'industrial-cleaning' %}
+                        <div class="service-detail-grid">
+                            <div class="service-item">
+                                <h6><i class="bi bi-gear-wide-connected"></i> Heavy Machinery</h6>
+                                <p>Specialized cleaning around heavy machinery, lubricants, and metal shavings with a focus on safety.</p>
+                            </div>
+                            <div class="service-item">
+                                <h6><i class="bi bi-database-fill"></i> Tank Cleaning</h6>
+                                <p>Complex industrial tank cleaning to reduce disposal costs and get operations back online quicker.</p>
+                            </div>
+                            <div class="service-item">
+                                <h6><i class="bi bi-vacuum"></i> Vacuuming Services</h6>
+                                <p>Wet and dry material collection using a modern fleet of mobile vacuum units for maximum efficiency.</p>
+                            </div>
+                            <div class="service-item">
+                                <h6><i class="bi bi-tools"></i> Equipment Maintenance</h6>
+                                <p>Regular cleaning of 24/7 operational machines to prevent rust and extend the lifespan of your plant.</p>
+                            </div>
+                            <div class="service-item">
+                                <h6><i class="bi bi-clock-history"></i> Rapid Turnaround</h6>
+                                <p>Fast, high-quality cleanup because in industrial environments, time is money and errors are costly.</p>
+                            </div>
+                        </div>
+                        {% elif opt.slug == 'society-cleaning' %}
+                        <div class="service-detail-grid">
+                            <div class="service-item">
+                                <h6><i class="bi bi-door-closed"></i> Corridor Cleaning</h6>
+                                <p>Comprehensive building corridor cleaning using the latest high-efficiency equipment for a spotless look.</p>
+                            </div>
+                            <div class="service-item">
+                                <h6><i class="bi bi-cloud-sun"></i> Terrace Cleaning</h6>
+                                <p>Regular deep cleaning of open terraces to combat city pollution and dirt using specialized machinery.</p>
+                            </div>
+                            <div class="service-item">
+                                <h6><i class="bi bi-tree"></i> Garden Maintenance</h6>
+                                <p>Keeping common areas and gardens hygienic and insect-free, including regular grass cutting and debris removal.</p>
+                            </div>
+                            <div class="service-item">
+                                <h6><i class="bi bi-shield-check"></i> 19+ Years Experience</h6>
+                                <p>Trusted housekeeping services aligned with the Clean India movement to maintain society standards.</p>
+                            </div>
+                        </div>
+                        {% elif opt.slug == 'house-cleaning' %}
+                        <div class="service-detail-grid">
+                            <div class="service-item">
+                                <h6><i class="bi bi-house-heart"></i> Full Home Care</h6>
+                                <p>Comprehensive household cleaning including rooms, halls, walls, surfaces, pipe cleaning and vacuuming.</p>
+                            </div>
+                            <div class="service-item">
+                                <h6><i class="bi bi-magic"></i> Carpet Cleaning</h6>
+                                <p>Deep vacuuming services to remove minute dirt from carpets, ensuring a safe and healthy play area for children.</p>
+                            </div>
+                            <div class="service-item">
+                                <h6><i class="bi bi-stars"></i> Scrubbing & Polishing</h6>
+                                <p>High-speed mechanical polishing (700+ RPM) using industry-grade chemicals for a mirror-like tile finish.</p>
+                            </div>
+                            <div class="service-item">
+                                <h6><i class="bi bi-hotel"></i> Hospitality Cleaning</h6>
+                                <p>Specialized cleaning for hotels, resorts, and hospitals, ensuring an orderly and hygienic environment.</p>
+                            </div>
+                        </div>
+                        {% elif opt.slug == 'water-tank-cleaning' %}
+                        <div class="service-detail-grid">
+                            <div class="service-item">
+                                <h6><i class="bi bi-shield-lock"></i> Vetted Professionals</h6>
+                                <p>Our tank cleaning partners are approved only after extensive background scrutiny and customer reference checks.</p>
+                            </div>
+                            <div class="service-item">
+                                <h6><i class="bi bi-droplet-half"></i> Pure Water Hygiene</h6>
+                                <p>Removal of sludge, algae, and contaminants to ensure your water storage is safe and hygienic.</p>
+                            </div>
+                            <div class="service-item">
+                                <h6><i class="bi bi-check-circle"></i> Quality Assured</h6>
+                                <p>Rigorous standards of cleaning to prevent waterborne diseases and maintain plumbing health.</p>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal" data-bs-toggle="modal" data-bs-target="#quoteModal" data-quote-service="{{ opt.name }}">Get Quote</button>
+                        <a href="{{ url_for('public.get_started', mode='book', service=opt.slug) }}" class="btn btn-primary">Book Now</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

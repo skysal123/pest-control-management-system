@@ -2,6 +2,68 @@
 {% block title %}Services | {{ business_name }}{% endblock %}
 
 {% block content %}
+<style>
+    .services-vertical-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .service-banner-card {
+        position: relative;
+        border-radius: var(--os-radius, 16px);
+        overflow: hidden;
+        min-height: 280px;
+        display: flex;
+        align-items: flex-end;
+        box-shadow: var(--os-card-shadow);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .service-banner-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(15, 29, 51, 0.18);
+    }
+    .service-banner-card > img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    .service-banner-card:hover > img {
+        transform: scale(1.06);
+    }
+    .service-banner-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(10, 20, 40, 0.15) 0%, rgba(10, 20, 40, 0.55) 55%, rgba(10, 20, 40, 0.85) 100%);
+    }
+    .service-banner-content {
+        position: relative;
+        z-index: 1;
+        padding: 2rem 1.75rem;
+        color: #fff;
+        width: 100%;
+    }
+    .service-banner-content h3 {
+        color: #fff;
+        margin-bottom: 0.5rem;
+        font-size: 1.9rem;
+        font-weight: 800;
+        letter-spacing: -.3px;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, .85), 0 4px 18px rgba(0, 0, 0, .55);
+        -webkit-text-stroke: .5px rgba(0, 0, 0, .35);
+    }
+    .service-banner-content p {
+        color: rgba(255, 255, 255, 0.85);
+        margin-bottom: 1.25rem;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, .55);
+    }
+</style>
+
 <section class="os-hero" style="padding: 3rem 0;">
   <div class="container text-center">
     <h1>Our Services</h1>
@@ -11,32 +73,47 @@
 
 <section class="os-section">
   <div class="container">
-    <div class="row g-4">
-      {% for s in services %}
-      {% set s_image = s.image or ('services/' ~ s.slug ~ '.webp') %}
-      <div class="col-md-6 col-lg-4">
-        <div class="os-card os-service-card h-100 p-0 overflow-hidden d-flex flex-column">
-          {% if s_image %}
-          <div class="os-service-thumb" style="background-image: linear-gradient(rgba(255,255,255,.05), rgba(255,255,255,.10)), url('{{ url_for('static', filename=s_image) }}');">
-            <div class="icon-wrap mb-0"><i class="bi {{ s.icon or 'bi-bug-fill' }}"></i></div>
-          </div>
-          {% else %}
-          <div class="p-4">
-            <div class="icon-wrap mb-3"><i class="bi {{ s.icon or 'bi-bug-fill' }}"></i></div>
-          </div>
-          {% endif %}
-          <div class="p-4 d-flex flex-column flex-grow-1">
-            <h5 class="mb-2">{{ s.name }}</h5>
-            <p class="text-muted small flex-grow-1">{{ s.short_description }}</p>
-            <a class="btn btn-outline-primary btn-sm mt-2 align-self-start" href="{{ url_for('public.service_detail', slug=s.slug) }}">
-              View details
-            </a>
+    <div class="services-vertical-list">
+        <!-- Pest Control Services -->
+        <div class="service-banner-card">
+            <img src="{{ url_for('static', filename='images/pests/cockroach-management.jpg', v='20261019') }}" alt="Pest Control Services">
+            <div class="service-banner-content">
+                <h3>Pest Control Services</h3>
+                <p>Effective and safe treatments for termites, cockroaches, rodents, and more.</p>
+                <a href="{{ url_for('public.pest_control_services') }}" class="btn btn-light">Explore Pest Control</a>
+            </div>
+        </div>
+
+        <!-- Cleaning Services -->
+        <div class="service-banner-card">
+            <img src="{{ url_for('static', filename='images/cleaning/commercial cleaning.png', v='20261019') }}" alt="Cleaning Services">
+            <div class="service-banner-content">
+                <h3>Cleaning Services</h3>
+                <p>Professional house, industrial, and water tank cleaning for a spotless environment.</p>
+                <a href="{{ url_for('public.cleaning_services') }}" class="btn btn-light">Explore Cleaning</a>
+            </div>
+        </div>
+
+        {# Sanitation Services - hidden on frontend
+        <div class="service-vertical-card">
+          <div class="os-card p-4 text-center">
+            <div class="icon-wrap mx-auto mb-3"><i class="bi bi-shield-shaded" style="font-size: 2.5rem; color: var(--os-primary);"></i></div>
+            <h3>Sanitation Services</h3>
+            <p class="text-muted mb-4">Complete disinfection and sanitation services to keep your space healthy.</p>
+            <a href="{{ url_for('public.services') }}" class="btn btn-primary">Explore Sanitation</a>
           </div>
         </div>
-      </div>
-      {% else %}
-      <div class="col-12 text-center text-muted">Services will be listed here soon.</div>
-      {% endfor %}
+        #}
+
+        <!-- Bird Netting Services -->
+        <div class="service-banner-card">
+            <img src="{{ url_for('static', filename='images/netting/society bird netting.jpg', v='20261019') }}" alt="Bird Netting Services">
+            <div class="service-banner-content">
+                <h3>Bird Netting Services</h3>
+                <p>Durable and transparent bird netting installations for homes and industries.</p>
+                <a href="{{ url_for('public.bird_netting_services') }}" class="btn btn-light">Explore Bird Netting</a>
+            </div>
+        </div>
     </div>
   </div>
 </section>

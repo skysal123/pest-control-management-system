@@ -1,14 +1,16 @@
 {% extends "admin/_layout.html" %}
+{% from "admin/_macros.html" import page_header %}
 
 {% block admin_content %}
-<h2 class="mb-4">Notifications</h2>
+{{ page_header('Notifications', 'Updates about your bookings and jobs') }}
 
 {% for n in notes %}
-<div class="os-card p-3 mb-2">
+<div class="os-card p-3 mb-2{% if n.id in unread_ids %} border-primary{% endif %}">
   <div class="d-flex justify-content-between">
     <div>
       <strong>{{ n.message }}</strong>
       <span class="text-muted small ms-2">[{{ n.type }}]</span>
+      {% if n.id in unread_ids %}<span class="badge bg-primary ms-1">New</span>{% endif %}
     </div>
     <small class="text-muted">{{ n.created_at.strftime('%d %b %Y, %H:%M') }}</small>
   </div>

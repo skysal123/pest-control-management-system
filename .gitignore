@@ -1,0 +1,37 @@
+# ---------------------------------------------------------------- Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+
+# Virtual environments (the project venv must never be committed)
+onestep/
+.venv/
+venv/
+env/
+
+# ---------------------------------------------------------------- Secrets
+.env
+.env.local
+*.pem
+*.key
+
+# ---------------------------------------------------------------- Database
+# The live SQLite file holds every lead, booking and customer - it must never
+# be tracked. Backups live in instance/backups/ and are ignored as well.
+instance/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# ---------------------------------------------------------------- Editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini

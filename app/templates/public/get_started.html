@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Get Started — Enquire or Book | {{ business_name }}{% endblock %}
+
+{% block content %}
+<section class="os-hero" style="padding: 3rem 0;">
+  <div class="container text-center">
+    <h1 class="display-5">Get Started</h1>
+    <p class="lead mb-0 opacity-75">Enquire about a service or book a visit — it takes under a minute.</p>
+  </div>
+</section>
+
+<section class="os-section">
+  <div class="container" style="max-width: 820px;">
+
+    {% if request.args.get('done') %}
+      <div class="os-card p-5 text-center">
+        <i class="bi bi-check-circle-fill text-success" style="font-size: 3.5rem;"></i>
+        <h3 class="mt-3">Thank you!</h3>
+        <p class="text-muted mb-4">
+          {% if mode == 'book' %}
+            Your booking request has been received. Our team will confirm your slot shortly.
+          {% else %}
+            Your enquiry has been received. Our team will contact you shortly.
+          {% endif %}
+        </p>
+        <div class="d-flex gap-2 justify-content-center flex-wrap">
+          <a href="{{ url_for('public.get_started') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Submit another
+          </a>
+          <a href="{{ url_for('public.home') }}" class="btn btn-outline-secondary">Back to Home</a>
+        </div>
+      </div>
+    {% else %}
+
+    <ul class="nav nav-pills nav-fill mb-4" id="startTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link {% if mode != 'book' %}active{% endif %}" id="tab-enquire"
+                data-bs-toggle="pill" data-bs-target="#pane-enquire" data-mode="enquire" type="button" role="tab">
+          <i class="bi bi-chat-dots"></i> Enquire Now
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link {% if mode == 'book' %}active{% endif %}" id="tab-book"
+                data-bs-toggle="pill" data-bs-target="#pane-book" data-mode="book" type="button" role="tab">
+          <i class="bi bi-calendar-check"></i> Book Now
+        </button>
+      </li>
+    </ul>
+
+    <div class="os-card p-4 p-md-5">
+      <div class="tab-content">
+        <div class="tab-pane fade {% if mode != 'book' %}show active{% endif %}" id="pane-enquire" role="tabpanel">
+          <h5 class="mb-1">Enquire Now</h5>
+          <p class="text-muted small mb-4">Tell us what you need and we'll get back with guidance and a quote.</p>
+        </div>
+        <div class="tab-pane fade {% if mode == 'book' %}show active{% endif %}" id="pane-book" role="tabpanel">
+          <h5 class="mb-1">Book Now</h5>
+          <p class="text-muted small mb-4">Pick a service and a preferred date — we'll confirm your slot shortly.</p>
+        </div>
+      </div>
+
+      <form method="post" id="startForm" novalidate>
+        <input type="hidden" name="mode" id="startMode" value="{{ 'book' if mode == 'book' else 'enquire' }}">
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Name *</label>
+            <input type="text" name="name" class="form-control" required value="{{ form.name or '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Mobile Number *</label>
+            <input type="tel" name="phone" class="form-control" required value="{{ form.phone or '' }}">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" class="form-control" value="{{ form.email or '' }}">
+          </div>
+          <div class="col-12">
+            {% include "partials/_service_picker.html" %}
+          </div>
+          <div class="col-md-8">
+            <label class="form-label">Address</label>
+            <input type="text" name="address" class="form-control" value="{{ form.address or '' }}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">City</label>
+            <input type="text" name="city" class="form-control" value="{{ form.city or '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" id="dateLabel">Preferred Date</label>
+            <input type="date" name="preferred_date" id="preferredDate" class="form-control" value="{{ form.preferred_date or '' }}">
+          </div>
+          <div class="col-md-6" id="timeWrap" style="display:none;">
+            <label class="form-label">Preferred Time</label>
+            <input type="time" name="preferred_time" class="form-control" value="{{ form.preferred_time or '' }}">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Message</label>
+            <textarea name="message" rows="3" class="form-control">{{ form.message or '' }}</textarea>
+          </div>
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary w-100 btn-lg" id="startSubmit">
+              <i class="bi bi-send-fill"></i> <span id="startSubmitText">Submit Enquiry</span>
+            </button>
+            <p class="text-center text-muted small mt-3 mb-0">
+              Prefer to talk? Call <a href="tel:{{ business_phone }}">{{ business_phone }}</a>
+              or <a href="https://wa.me/{{ business_whatsapp }}" target="_blank">WhatsApp us</a>.
+            </p>
+          </div>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var form = document.getElementById('startForm');
+    if (!form) return;
+    var modeInput = document.getElementById('startMode');
+    var dateInput = document.getElementById('preferredDate');
+    var timeWrap = document.getElementById('timeWrap');
+    var submitText = document.getElementById('startSubmitText');
+    var dateLabel = document.getElementById('dateLabel');
+
+    function applyMode(mode) {
+      modeInput.value = mode;
+      var isBook = mode === 'book';
+      timeWrap.style.display = isBook ? '' : 'none';
+      dateInput.required = isBook;
+      dateLabel.textContent = isBook ? 'Booking Date *' : 'Preferred Date';
+      submitText.textContent = isBook ? 'Request Booking' : 'Submit Enquiry';
+    }
+
+    document.querySelectorAll('#startTabs [data-mode]').forEach(function (tab) {
+      tab.addEventListener('shown.bs.tab', function () { applyMode(tab.getAttribute('data-mode')); });
+      tab.addEventListener('click', function () { applyMode(tab.getAttribute('data-mode')); });
+    });
+
+    applyMode(modeInput.value);
+  })();
+</script>
+{% endblock %}

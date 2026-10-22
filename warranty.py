@@ -13,7 +13,11 @@ import logging
 
 from extensions import db
 from models import Booking, WarrantyReminder, User
-from notifications import notify_warranty_reminder, inapp_notify
+from notifications import (
+    NT_WARRANTY_REMINDER,
+    notify_warranty_reminder,
+    notify_admins,
+)
 from flask import url_for
 
 log = logging.getLogger(__name__)
@@ -62,14 +66,13 @@ def scan_and_notify(app):
                         )
                         db.session.add(rem)
                         # Also in-app notify all admins
-                        for admin in User.query.filter_by(role="ADMIN", is_active=True).all():
-                            inapp_notify(
-                                admin.id,
-                                "warranty_reminder",
-                                f"Warranty for booking #{b.id} ({b.service.name}) "
-                                f"expires in {offset} day(s)",
-                                link=url_for("admin.booking_detail", booking_id=b.id),
-                            )
+                        notify_admins(
+                            NT_WARRANTY_REMINDER,
+                            f"Warranty for booking #{b.id} ({b.service.name}) "
+                            f"expires in {offset} day(s)",
+                            link=url_for("admin.booking_detail", booking_id=b.id),
+                            commit=False,
+                        )
                         sent += 1
         if sent:
             db.session.commit()

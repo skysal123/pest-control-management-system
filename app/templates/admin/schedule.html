@@ -1,0 +1,224 @@
+{% extends "admin/_layout.html" %}
+{% from "admin/_macros.html" import page_header %}
+
+{% block title %}Schedule · {{ business_name }}{% endblock %}
+{% block page_title %}Schedule{% endblock %}
+
+{% block admin_content %}
+{% call page_header('Schedule', 'Team availability for ' ~ day.strftime('%A, %d %B %Y')) %}
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{{ url_for('admin.technicians') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-people"></i> Technicians
+    </a>
+    <a href="{{ url_for('admin.booking_new') }}" class="btn btn-primary">
+      <i class="bi bi-plus-lg"></i> New Booking
+    </a>
+  </div>
+{% endcall %}
+
+<!-- Day navigation -->
+<div class="os-sched-nav">
+  <div class="os-sched-nav-left">
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin.schedule', date=prev_day.isoformat()) }}">
+      <i class="bi bi-chevron-left"></i>
+    </a>
+    <form method="get" class="d-flex gap-2">
+      <input type="date" name="date" class="form-control form-control-sm" value="{{ day.isoformat() }}">
+      <button class="btn btn-sm btn-outline-secondary">Go</button>
+    </form>
+    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('admin.schedule', date=next_day.isoformat()) }}">
+      <i class="bi bi-chevron-right"></i>
+    </a>
+    <a class="btn btn-sm {% if day == today %}btn-primary{% else %}btn-outline-primary{% endif %}"
+       href="{{ url_for('admin.schedule', date=today.isoformat()) }}">Today</a>
+  </div>
+  <div class="os-sched-week">
+    {% for d in week %}
+    <a class="os-sched-day {% if d == day %}active{% endif %}"
+       href="{{ url_for('admin.schedule', date=d.isoformat()) }}">
+      <span class="dow">{{ d.strftime('%a') }}</span>
+      <span class="dom">{{ d.day }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  <form method="get" class="os-sched-filter">
+    <input type="hidden" name="date" value="{{ day.isoformat() }}">
+    <select name="tech" class="form-select form-select-sm" onchange="this.form.submit()">
+      <option value="">All technicians</option>
+      {% for t in all_techs %}
+      <option value="{{ t.id }}" {% if tech_filter == t.id|string %}selected{% endif %}>{{ t.name }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+<!-- Summary strip -->
+<div class="os-stats-grid os-sched-stats">
+  <div class="os-stat tone-success">
+    <div class="os-stat-icon"><i class="bi bi-person-check"></i></div>
+    <div class="os-stat-body">
+      <span class="os-stat-label">Free now</span>
+      <span class="os-stat-value">{{ free_techs }}</span>
+    </div>
+  </div>
+  <div class="os-stat tone-warning">
+    <div class="os-stat-icon"><i class="bi bi-hourglass-split"></i></div>
+    <div class="os-stat-body">
+      <span class="os-stat-label">Busy</span>
+      <span class="os-stat-value">{{ busy_techs }}</span>
+    </div>
+  </div>
+  <div class="os-stat tone-danger">
+    <div class="os-stat-icon"><i class="bi bi-moon-stars"></i></div>
+    <div class="os-stat-body">
+      <span class="os-stat-label">Off / leave</span>
+      <span class="os-stat-value">{{ off_techs }}</span>
+    </div>
+  </div>
+  <div class="os-stat tone-info">
+    <div class="os-stat-icon"><i class="bi bi-inbox"></i></div>
+    <div class="os-stat-body">
+      <span class="os-stat-label">Unassigned</span>
+      <span class="os-stat-value">{{ unassigned|length }}</span>
+    </div>
+  </div>
+  <div class="os-stat tone-violet">
+    <div class="os-stat-icon"><i class="bi bi-pie-chart"></i></div>
+    <div class="os-stat-body">
+      <span class="os-stat-label">Team load</span>
+      <span class="os-stat-value">
+        {% if total_capacity %}{{ ((total_booked / total_capacity) * 100)|round|int }}%{% else %}0%{% endif %}
+      </span>
+    </div>
+  </div>
+</div>
+
+{% if unassigned %}
+<div class="os-panel mb-3">
+  <div class="os-panel-head">
+    <h5 class="os-panel-title"><i class="bi bi-inbox"></i> Unassigned jobs on {{ day.strftime('%d %b') }}</h5>
+    <span class="os-panel-link">Pick a technician to schedule</span>
+  </div>
+  <div class="os-panel-body p-3">
+    <div class="os-sched-unassigned">
+      {% for b in unassigned %}
+      <div class="os-sched-ucard">
+        <div class="uc-top">
+          <span class="pill {{ b.status|lower|replace(' ', '') }}">{{ b.status }}</span>
+          <span class="uc-time">
+            <i class="bi bi-clock"></i>
+            {{ b.booking_time or 'Any time' }}
+            {% if b.start_time %}· {{ b.duration_minutes }} min{% endif %}
+          </span>
+        </div>
+        <div class="uc-name">
+          <a href="{{ url_for('admin.booking_detail', booking_id=b.id) }}">{{ b.customer.name }}</a>
+        </div>
+        <div class="uc-svc">{{ b.service.name }}</div>
+        {% if b.address %}<div class="uc-addr"><i class="bi bi-geo-alt"></i> {{ b.address }}</div>{% endif %}
+        <div class="dropdown mt-2">
+          <button class="btn btn-sm btn-primary dropdown-toggle w-100" type="button"
+                  data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-person-plus"></i> Assign technician
+          </button>
+          <ul class="dropdown-menu os-sched-menu">
+            {% for opt in assign_options[b.id] %}
+            <li>
+              <form method="post" action="{{ url_for('admin.schedule_assign') }}">
+                <input type="hidden" name="booking_id" value="{{ b.id }}">
+                <input type="hidden" name="technician_id" value="{{ opt.tech.id }}">
+                <button class="dropdown-item os-sched-opt {% if opt.busy %}is-busy{% elif opt.off %}is-off{% endif %}">
+                  <span class="opt-name">{{ opt.tech.name }}</span>
+                  <span class="opt-reason">{{ opt.reason }}</span>
+                </button>
+              </form>
+            </li>
+            {% else %}
+            <li><span class="dropdown-item text-muted">No technicians available</span></li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Day board -->
+<div class="os-panel">
+  <div class="os-panel-head">
+    <h5 class="os-panel-title"><i class="bi bi-calendar3"></i> Day board</h5>
+    <div class="os-sched-legend ms-auto">
+      <span><i class="dot dot-pending"></i> Pending</span>
+      <span><i class="dot dot-confirmed"></i> Confirmed</span>
+      <span><i class="dot dot-assigned"></i> Assigned</span>
+      <span><i class="dot dot-progress"></i> In Progress</span>
+      <span><i class="dot dot-travel"></i> Travel buffer ({{ travel_buffer }}m)</span>
+    </div>
+  </div>
+  <div class="os-panel-body">
+    <div class="os-sched-scroll">
+      <div class="os-sched-grid">
+        <!-- ruler -->
+        <div class="os-sched-row os-sched-ruler">
+          <div class="os-sched-name"></div>
+          <div class="os-sched-track">
+            {% for minute, label in timeline.hours() %}
+            <span class="os-sched-tick" style="left: {{ timeline.pct(minute) }}%">{{ label }}</span>
+            {% endfor %}
+          </div>
+        </div>
+
+        {% for row in rows %}
+        {% set av = row.availability %}
+        <div class="os-sched-row">
+          <div class="os-sched-name">
+            <a href="{{ url_for('admin.technician_jobs', tech_id=row.tech.id) }}" class="sched-tech-name">
+              {{ row.tech.name }}
+            </a>
+            <span class="sched-state state-{{ av.state }}">{{ av.state_label }}</span>
+            <div class="sched-meter" title="{{ av.load_percent }}% booked">
+              <span style="width: {{ av.load_percent }}%"></span>
+            </div>
+            <span class="sched-free">{{ av.free_label }}</span>
+          </div>
+          <div class="os-sched-track {% if av.is_off %}is-off{% endif %}">
+            {% for hour in timeline.hours() %}
+            <span class="os-sched-gridline" style="left: {{ timeline.pct(hour[0]) }}%"></span>
+            {% endfor %}
+            {% if av.is_off %}
+            <span class="os-sched-offmark">
+              {% if av.on_leave %}On leave{% if av.leave_reason %} · {{ av.leave_reason }}{% endif %}
+              {% else %}Not working{% endif %}
+            </span>
+            {% endif %}
+            {% for block in av.blocks %}
+            <a class="os-sched-block status-{{ block.status|lower|replace(' ', '-') }}"
+               href="{{ url_for('admin.booking_detail', booking_id=block.booking.id) }}"
+               style="left: {{ timeline.clamp_pct(block.start_min) }}%; width: {{ timeline.span_pct(block.start_min, block.end_min) }}%"
+               title="{{ block.service_name }} · {{ block.customer_name }} · {{ block.start_label }} - {{ block.end_label }}">
+              <span class="sb-time">{{ block.start_label }}</span>
+              <span class="sb-title">{{ block.customer_name }}</span>
+              <span class="sb-svc">{{ block.service_name }}</span>
+            </a>
+            {% if block.travel_after %}
+            {% set tgeo = (timeline.clamp_pct(block.end_min), timeline.span_pct(block.end_min, block.end_min + block.travel_after)) %}
+            <span class="os-sched-travel"
+                  style="left: {{ tgeo[0] }}%; width: {{ tgeo[1] }}%"
+                  title="Travel buffer {{ block.travel_after }} min"></span>
+            {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div class="os-sched-row">
+          <div class="os-sched-name">No technicians yet</div>
+          <div class="os-sched-track"></div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

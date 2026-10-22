@@ -1,8 +1,10 @@
 """Seed database with admin, technicians, and pest-control services."""
 from getpass import getpass
-
+from flask import current_app
+from catalog import CATALOG
 from extensions import db
 from models import User, Service
+
 
 
 SERVICES = [
@@ -209,6 +211,7 @@ def run_seed(app, admin_email=None, admin_password=None):
             admin = User(
                 name="Admin",
                 email=admin_email.lower(),
+                whatsapp=current_app.config["BUSINESS_WHATSAPP"],
                 role="ADMIN",
                 is_active=True,
             )
@@ -225,7 +228,9 @@ def run_seed(app, admin_email=None, admin_password=None):
         ]
         for name, email, pw in sample_techs:
             if not User.query.filter_by(email=email.lower()).first():
-                t = User(name=name, email=email.lower(), role="TECHNICIAN", is_active=True)
+                t = User(name=name, email=email.lower(),
+                         whatsapp=current_app.config["BUSINESS_WHATSAPP"],
+                         role="TECHNICIAN", is_active=True)
                 t.set_password(pw)
                 db.session.add(t)
                 print(f"  + Technician created: {email} / {pw}")
@@ -240,6 +245,27 @@ def run_seed(app, admin_email=None, admin_password=None):
                 print(f"  + Service: {spec['name']}")
             else:
                 print(f"  . Service exists: {spec['name']}")
+
+        # ----- Full catalogue (all site offerings, grouped categories) -----
+        for item in CATALOG:
+            slugs = [item["slug"]] + item.get("aliases", [])
+            existing = Service.query.filter(Service.slug.in_(slugs)).first()
+            if existing:
+                existing.name = item["name"]
+                if item.get("icon"):
+                    existing.icon = item["icon"]
+                if not existing.short_description:
+                    existing.short_description = item["short_description"]
+                print(f"  . Catalogue linked: {item['name']}")
+            else:
+                db.session.add(Service(
+                    name=item["name"],
+                    slug=item["slug"],
+                    icon=item.get("icon"),
+                    short_description=item["short_description"],
+                    status="ACTIVE",
+                ))
+                print(f"  + Service: {item['name']}")
 
         db.session.commit()
         print("\nSeed complete.")

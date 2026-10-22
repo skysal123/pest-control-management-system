@@ -1,12 +1,20 @@
 {% extends "admin/_layout.html" %}
+{% from "admin/_macros.html" import page_header %}
 
 {% block admin_content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h2 class="mb-0">Leads</h2>
+{% call page_header('Leads', 'Track and manage customer enquiries') %}
   <a href="{{ url_for('admin.lead_new') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> New Lead</a>
+{% endcall %}
+
+<div class="os-period-filter" role="group" aria-label="Filter leads by period">
+  {% for key, label in periods %}
+    <a href="{{ url_for('admin.leads', period=key, q=q, source=source, status=status) }}"
+       class="os-period-btn {% if period == key %}active{% endif %}">{{ label }}</a>
+  {% endfor %}
 </div>
 
-<form method="get" class="row g-2 mb-3">
+<form method="get" class="row g-2 mb-2 align-items-end">
+  <input type="hidden" name="period" value="{{ period }}">
   <div class="col-md-4">
     <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search name, phone, email...">
   </div>
@@ -29,6 +37,37 @@
   <div class="col-md-2"><button class="btn btn-outline-primary w-100">Filter</button></div>
 </form>
 
+<form method="get" class="row g-2 mb-3 align-items-end">
+  <input type="hidden" name="period" value="custom">
+  <input type="hidden" name="q" value="{{ q }}">
+  <input type="hidden" name="source" value="{{ source }}">
+  <input type="hidden" name="status" value="{{ status }}">
+  <div class="col-md-3">
+    <label class="form-label small text-muted mb-1">From date</label>
+    <input type="date" name="from" value="{{ date_from }}" class="form-control">
+  </div>
+  <div class="col-md-3">
+    <label class="form-label small text-muted mb-1">To date</label>
+    <input type="date" name="to" value="{{ date_to }}" class="form-control">
+  </div>
+  <div class="col-md-3">
+    <button class="btn btn-primary"><i class="bi bi-calendar-range"></i> Apply range</button>
+  </div>
+  {% if date_from or date_to %}
+  <div class="col-md-3">
+    <a href="{{ url_for('admin.leads', period='all', q=q, source=source, status=status) }}" class="btn btn-outline-secondary">Clear range</a>
+  </div>
+  {% endif %}
+</form>
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <span class="text-muted small">
+    Showing <strong>{{ total }}</strong> lead{{ '' if total == 1 else 's' }}
+    · <span class="os-range-chip">{{ period_label }}</span>
+    {% if date_from or date_to %}({{ date_from or 'start' }} → {{ date_to or 'now' }}){% endif %}
+  </span>
+</div>
+
 <div class="os-card p-0">
   <table class="table os-table mb-0">
     <thead><tr>
@@ -40,11 +79,24 @@
         <td>{{ l.id }}</td>
         <td>{{ l.customer.name }}</td>
         <td>{{ l.customer.phone }}</td>
-        <td>{{ l.service.name if l.service else '—' }}</td>
+        <td>{{ l.service.name if l.service else (l.service_category or '—') }}</td>
         <td>{{ l.source }}</td>
         <td><span class="pill {{ l.status|lower|replace(' ', '') }}">{{ l.status }}</span></td>
         <td><small>{{ l.created_at.strftime('%d %b %Y') }}</small></td>
-        <td><a href="{{ url_for('admin.lead_detail', lead_id=l.id) }}" class="btn btn-sm btn-outline-primary">Open</a></td>
+        <td class="text-end text-nowrap">
+          <div class="d-inline-flex gap-1">
+            {% if l.booking %}
+              <a href="{{ url_for('admin.booking_detail', booking_id=l.booking.id) }}" class="btn btn-sm btn-outline-success">
+                <i class="bi bi-check2-circle"></i> Booking
+              </a>
+            {% else %}
+              <a href="{{ url_for('admin.booking_new') }}?lead_id={{ l.id }}" class="btn btn-sm btn-primary">
+                <i class="bi bi-arrow-right-circle"></i> Convert
+              </a>
+            {% endif %}
+            <a href="{{ url_for('admin.lead_detail', lead_id=l.id) }}" class="btn btn-sm btn-outline-primary">Open</a>
+          </div>
+        </td>
       </tr>
       {% else %}
       <tr><td colspan="8" class="text-center text-muted py-4">No leads found.</td></tr>

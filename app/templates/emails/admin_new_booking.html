@@ -1,0 +1,32 @@
+<!doctype html><html><body style="font-family:Segoe UI,Arial,sans-serif;color:#1c2434;background:#f5f8fb;padding:24px;">
+<div style="max-width:600px;margin:auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e7ecf3;">
+  <div style="background:#0d6efd;color:#fff;padding:20px 24px;">
+    <h2 style="margin:0;">New Booking Request</h2>
+    <div style="opacity:.9;font-size:13px;">{{ business_name }} &middot; Booking #{{ booking.id }}</div>
+  </div>
+  <div style="padding:24px;">
+    <p>A new booking request just came in.</p>
+    <table style="width:100%;border-collapse:collapse;">
+      <tr><td style="padding:6px 0;color:#6c757d;">Booking ID</td><td><strong>#{{ booking.id }}</strong></td></tr>
+      <tr><td style="padding:6px 0;color:#6c757d;">Service</td><td><strong>{{ service.name }}</strong></td></tr>
+      <tr><td style="padding:6px 0;color:#6c757d;">Customer</td><td>{{ customer.name }}</td></tr>
+      <tr><td style="padding:6px 0;color:#6c757d;">Mobile</td><td><strong>{{ customer.phone }}</strong></td></tr>
+      {% if customer.email %}<tr><td style="padding:6px 0;color:#6c757d;">Email</td><td>{{ customer.email }}</td></tr>{% endif %}
+      <tr><td style="padding:6px 0;color:#6c757d;">Date</td><td>{{ booking.booking_date.strftime('%d %b %Y') }} {{ booking.booking_time or '' }}</td></tr>
+      {% if booking.address %}<tr><td style="padding:6px 0;color:#6c757d;">Address</td><td>{{ booking.address }}</td></tr>{% endif %}
+      <tr><td style="padding:6px 0;color:#6c757d;">Status</td><td><strong>{{ booking.status }}</strong></td></tr>
+    </table>
+    {% if booking.notes %}
+    <div style="margin-top:14px;padding:12px 14px;background:#f5f8fb;border-radius:8px;">
+      <strong style="font-size:13px;">Customer note</strong>
+      <div style="margin-top:4px;">{{ booking.notes }}</div>
+    </div>
+    {% endif %}
+    <p style="margin-top:18px;">Confirm the booking to send the customer their
+       "appointment booked" message on WhatsApp.</p>
+  </div>
+  <div style="background:#f5f8fb;padding:14px 24px;color:#6c757d;font-size:12px;text-align:center;">
+    {{ business_name }} &middot; This is an automated message.
+  </div>
+</div>
+</body></html>

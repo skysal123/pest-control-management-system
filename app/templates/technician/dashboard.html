@@ -1,84 +1,189 @@
 {% extends "technician/_layout.html" %}
+{% from "admin/_macros.html" import page_header %}
+
+{% set booking_pills = {'pending':'pending','confirmed':'confirmed','assigned':'assigned','in progress':'inprogress','completed':'completed','cancelled':'cancelled'} %}
+
+{% block title %}Dashboard · Technician{% endblock %}
 
 {% block tech_content %}
-<h2 class="mb-4">Hi, {{ current_user.name }} 👋</h2>
+<section class="os-hero-banner" style="background: linear-gradient(120deg, #0d9488 0%, #0f766e 55%, #115e59 100%); box-shadow: 0 14px 32px rgba(13, 148, 136, .28);">
+  <div class="hb-inner">
+    <div>
+      <h2>{{ greeting }}, {{ current_user.name }} 👋</h2>
+      <p>{% if today %}{{ today.strftime('%A, %d %B %Y') }} · {% endif %}You have {{ due_today|length }} job{{ '' if due_today|length == 1 else 's' }} scheduled today.</p>
+    </div>
+    <div class="os-hero-actions">
+      <a href="{{ url_for('public.home') }}" target="_blank" class="btn btn-outline-light"><i class="bi bi-globe"></i> View Website</a>
+    </div>
+  </div>
+</section>
 
-<div class="row g-3 mb-4">
-  <div class="col-md-4">
-    <div class="os-stat-card warning"><div class="label">Pending</div><div class="value">{{ pending|length }}</div></div>
+{{ page_header('My Dashboard', 'Your assigned jobs and service history', section='Technician') }}
+
+<div class="os-stats-grid">
+  <div class="os-stat tone-warning">
+    <span class="os-stat-icon tone-warning"><i class="bi bi-hourglass-split"></i></span>
+    <span class="os-stat-body">
+      <span class="os-stat-label">Pending</span>
+      <span class="os-stat-value">{{ pending|length }}</span>
+    </span>
   </div>
-  <div class="col-md-4">
-    <div class="os-stat-card info"><div class="label">Active</div><div class="value">{{ active|length }}</div></div>
+  <div class="os-stat tone-info">
+    <span class="os-stat-icon tone-info"><i class="bi bi-arrow-repeat"></i></span>
+    <span class="os-stat-body">
+      <span class="os-stat-label">Active / In Progress</span>
+      <span class="os-stat-value">{{ active|length }}</span>
+    </span>
   </div>
-  <div class="col-md-4">
-    <div class="os-stat-card success"><div class="label">Completed (recent)</div><div class="value">{{ completed|length }}</div></div>
+  <div class="os-stat tone-success">
+    <span class="os-stat-icon tone-success"><i class="bi bi-check2-circle"></i></span>
+    <span class="os-stat-body">
+      <span class="os-stat-label">Completed (recent)</span>
+      <span class="os-stat-value">{{ completed|length }}</span>
+    </span>
+  </div>
+  <div class="os-stat tone-violet">
+    <span class="os-stat-icon tone-violet"><i class="bi bi-calendar-event"></i></span>
+    <span class="os-stat-body">
+      <span class="os-stat-label">Due Today</span>
+      <span class="os-stat-value">{{ due_today|length }}</span>
+    </span>
+  </div>
+  <div class="os-stat tone-danger">
+    <span class="os-stat-icon tone-danger"><i class="bi bi-person-check"></i></span>
+    <span class="os-stat-body">
+      <span class="os-stat-label">Assigned Enquiries</span>
+      <span class="os-stat-value">{{ assigned_leads|length }}</span>
+    </span>
   </div>
 </div>
 
-<div class="os-card p-4 mb-4">
-  <h5 class="mb-3"><i class="bi bi-hourglass-split text-warning"></i> Pending Confirmation</h5>
+<section class="os-panel mb-3">
+  <header class="os-panel-head">
+    <h3 class="os-panel-title"><i class="bi bi-person-check me-1"></i> Assigned Enquiries</h3>
+    <span class="os-panel-link">{{ assigned_leads|length }} assigned</span>
+  </header>
+  <div class="os-table-scroll">
+  {% if assigned_leads %}
+    <table class="table align-middle mb-0">
+      <thead><tr><th>#</th><th>Customer</th><th>Contact</th><th>Service</th><th>Preferred</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for l in assigned_leads %}
+        <tr>
+          <td class="cell-id">#{{ l.id }}</td>
+          <td class="cell-strong text-truncate">{{ l.customer.name }}</td>
+          <td><a href="tel:{{ l.customer.phone }}">{{ l.customer.phone }}</a></td>
+          <td class="text-truncate">{{ l.service.name if l.service else '—' }}</td>
+          <td class="text-truncate">{{ l.preferred_date.strftime('%d %b %Y') if l.preferred_date else '—' }}</td>
+          <td><span class="pill {{ l.status|lower|replace(' ', '') }}">{{ l.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="os-empty"><i class="bi bi-person-check"></i><span>No enquiries assigned to you yet.</span></div>
+  {% endif %}
+  </div>
+</section>
+
+{% if notifications %}
+<section class="os-panel mb-3">
+  <header class="os-panel-head">
+    <h3 class="os-panel-title"><i class="bi bi-bell me-1"></i> Recent Notifications</h3>
+  </header>
+  <div class="p-3">
+    {% for n in notifications %}
+    <div class="d-flex align-items-start gap-2 {% if not loop.last %}border-bottom pb-2 mb-2{% endif %}">
+      <i class="bi bi-dot fs-4 text-primary"></i>
+      <div>
+        <div class="{% if n.status == 'unread' %}fw-semibold{% endif %}">{{ n.message }}</div>
+        <small class="text-muted">{{ n.created_at.strftime('%d %b %Y, %H:%M') }}{% if n.link %} · <a href="{{ n.link }}">Open</a>{% endif %}</small>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="os-panel mb-3">
+  <header class="os-panel-head">
+    <h3 class="os-panel-title"><i class="bi bi-hourglass-split me-1"></i> Pending Confirmation</h3>
+    <span class="os-panel-link">{{ pending|length }} job{{ '' if pending|length == 1 else 's' }}</span>
+  </header>
+  <div class="os-table-scroll">
   {% if pending %}
-  <table class="table table-sm mb-0">
-    <thead><tr><th>#</th><th>Customer</th><th>Service</th><th>Date</th><th></th></tr></thead>
-    <tbody>
-      {% for b in pending %}
-      <tr>
-        <td>{{ b.id }}</td>
-        <td>{{ b.customer.name }}</td>
-        <td>{{ b.service.name }}</td>
-        <td>{{ b.booking_date.strftime('%d %b %Y') }} {{ b.booking_time or '' }}</td>
-        <td><a href="{{ url_for('technician.job_detail', booking_id=b.id) }}" class="btn btn-sm btn-outline-primary">Open</a></td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    <table class="table align-middle mb-0">
+      <thead><tr><th>#</th><th>Customer</th><th>Service</th><th>Date</th><th class="text-end">Action</th></tr></thead>
+      <tbody>
+        {% for b in pending %}
+        <tr>
+          <td class="cell-id">#{{ b.id }}</td>
+          <td class="cell-strong text-truncate">{{ b.customer.name }}</td>
+          <td class="text-truncate">{{ b.service.name }}</td>
+          <td class="text-truncate">{{ b.booking_date.strftime('%d %b %Y') }} {{ b.booking_time or '' }}</td>
+          <td class="text-end"><a href="{{ url_for('technician.job_detail', booking_id=b.id) }}" class="btn btn-sm btn-outline-primary">Open</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   {% else %}
-    <p class="text-muted small mb-0">No pending jobs.</p>
+    <div class="os-empty"><i class="bi bi-hourglass"></i><span>No pending jobs.</span></div>
   {% endif %}
-</div>
+  </div>
+</section>
 
-<div class="os-card p-4 mb-4">
-  <h5 class="mb-3"><i class="bi bi-arrow-repeat text-info"></i> Active / In Progress</h5>
+<section class="os-panel mb-3">
+  <header class="os-panel-head">
+    <h3 class="os-panel-title"><i class="bi bi-arrow-repeat me-1"></i> Active / In Progress</h3>
+    <span class="os-panel-link">{{ active|length }} job{{ '' if active|length == 1 else 's' }}</span>
+  </header>
+  <div class="os-table-scroll">
   {% if active %}
-  <table class="table table-sm mb-0">
-    <thead><tr><th>#</th><th>Customer</th><th>Service</th><th>Date</th><th>Status</th><th></th></tr></thead>
-    <tbody>
-      {% for b in active %}
-      <tr>
-        <td>{{ b.id }}</td>
-        <td>{{ b.customer.name }}</td>
-        <td>{{ b.service.name }}</td>
-        <td>{{ b.booking_date.strftime('%d %b %Y') }} {{ b.booking_time or '' }}</td>
-        <td><span class="pill {{ b.status|lower|replace(' ', '') }}">{{ b.status }}</span></td>
-        <td><a href="{{ url_for('technician.job_detail', booking_id=b.id) }}" class="btn btn-sm btn-outline-primary">Open</a></td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    <table class="table align-middle mb-0">
+      <thead><tr><th>#</th><th>Customer</th><th>Service</th><th>Date</th><th>Status</th><th class="text-end">Action</th></tr></thead>
+      <tbody>
+        {% for b in active %}
+        <tr>
+          <td class="cell-id">#{{ b.id }}</td>
+          <td class="cell-strong text-truncate">{{ b.customer.name }}</td>
+          <td class="text-truncate">{{ b.service.name }}</td>
+          <td class="text-truncate">{{ b.booking_date.strftime('%d %b %Y') }} {{ b.booking_time or '' }}</td>
+          <td><span class="pill {{ booking_pills.get(b.status|lower, '') }}">{{ b.status }}</span></td>
+          <td class="text-end"><a href="{{ url_for('technician.job_detail', booking_id=b.id) }}" class="btn btn-sm btn-outline-primary">Open</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   {% else %}
-    <p class="text-muted small mb-0">No active jobs.</p>
+    <div class="os-empty"><i class="bi bi-arrow-repeat"></i><span>No active jobs.</span></div>
   {% endif %}
-</div>
+  </div>
+</section>
 
-<div class="os-card p-4">
-  <h5 class="mb-3"><i class="bi bi-check2-circle text-success"></i> Recently Completed</h5>
+<section class="os-panel">
+  <header class="os-panel-head">
+    <h3 class="os-panel-title"><i class="bi bi-check2-circle me-1"></i> Recently Completed</h3>
+    <span class="os-panel-link">{{ completed|length }} recent</span>
+  </header>
+  <div class="os-table-scroll">
   {% if completed %}
-  <table class="table table-sm mb-0">
-    <thead><tr><th>#</th><th>Customer</th><th>Service</th><th>Completed</th><th></th></tr></thead>
-    <tbody>
-      {% for b in completed %}
-      <tr>
-        <td>{{ b.id }}</td>
-        <td>{{ b.customer.name }}</td>
-        <td>{{ b.service.name }}</td>
-        <td>{{ b.completed_at.strftime('%d %b %Y, %H:%M') }}</td>
-        <td><a href="{{ url_for('technician.job_detail', booking_id=b.id) }}" class="btn btn-sm btn-outline-secondary">View</a></td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+    <table class="table align-middle mb-0">
+      <thead><tr><th>#</th><th>Customer</th><th>Service</th><th>Completed</th><th class="text-end">Action</th></tr></thead>
+      <tbody>
+        {% for b in completed %}
+        <tr>
+          <td class="cell-id">#{{ b.id }}</td>
+          <td class="cell-strong text-truncate">{{ b.customer.name }}</td>
+          <td class="text-truncate">{{ b.service.name }}</td>
+          <td class="text-truncate">{{ b.completed_at.strftime('%d %b %Y, %H:%M') }}</td>
+          <td class="text-end"><a href="{{ url_for('technician.job_detail', booking_id=b.id) }}" class="btn btn-sm btn-outline-secondary">View</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   {% else %}
-    <p class="text-muted small mb-0">No completed jobs yet.</p>
+    <div class="os-empty"><i class="bi bi-check2-circle"></i><span>No completed jobs yet.</span></div>
   {% endif %}
-</div>
+  </div>
+</section>
 {% endblock %}

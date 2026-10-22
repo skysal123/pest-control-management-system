@@ -1,0 +1,96 @@
+<div class="modal fade" id="quoteModal" tabindex="-1" aria-labelledby="quoteModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="quoteModalTitle">
+          <i class="bi bi-tags"></i> Get a Quote
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="quoteForm" novalidate>
+          <p class="text-muted small">
+            Share your details and our team will get back to you with a quote.
+          </p>
+          <div class="mb-3">
+            <label class="form-label">Name *</label>
+            <input type="text" name="name" id="quoteName" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Mobile Number *</label>
+            <input type="tel" name="phone" id="quotePhone" class="form-control" required>
+          </div>
+          {% with cat_label='Service Type *', svc_label='Specific Service (optional)', cat_placeholder='— Select service type —' %}
+            {% include "partials/_service_picker.html" %}
+          {% endwith %}
+          <div id="quoteError" class="alert alert-danger py-2 small d-none mb-3"></div>
+          <button type="submit" class="btn btn-primary w-100" id="quoteSubmit">
+            <i class="bi bi-send-fill"></i> Request Quote
+          </button>
+        </form>
+
+        <div id="quoteSuccess" class="text-center d-none py-3">
+          <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+          <h5 class="mt-2 mb-1">Thank You!</h5>
+          <p class="text-muted mb-0" id="quoteSuccessMsg">Our team will shortly reach out to you.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var modalEl = document.getElementById('quoteModal');
+    if (!modalEl) return;
+
+    modalEl.addEventListener('show.bs.modal', function (event) {
+      var btn = event.relatedTarget;
+      var name = btn ? (btn.getAttribute('data-quote-service') || '') : '';
+      var id = btn ? (btn.getAttribute('data-quote-service-id') || '') : '';
+      var form = document.getElementById('quoteForm');
+      form.reset();
+      var picker = form.querySelector('.service-picker');
+      if (picker) {
+        picker.dispatchEvent(new CustomEvent('service-picker:select', {
+          detail: { id: id, name: name }
+        }));
+      }
+      form.classList.remove('d-none');
+      document.getElementById('quoteSuccess').classList.add('d-none');
+      document.getElementById('quoteError').classList.add('d-none');
+    });
+
+    var form = document.getElementById('quoteForm');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var err = document.getElementById('quoteError');
+      var btn = document.getElementById('quoteSubmit');
+      var catSel = form.querySelector('.js-cat');
+      if (catSel && !catSel.value) {
+        err.textContent = 'Please select the service type.';
+        err.classList.remove('d-none');
+        return;
+      }
+      err.classList.add('d-none');
+      btn.disabled = true;
+      fetch("{{ url_for('public.quote') }}", { method: 'POST', body: new FormData(form) })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+        .then(function (res) {
+          if (res.ok && res.data.ok) {
+            form.classList.add('d-none');
+            document.getElementById('quoteSuccessMsg').textContent = res.data.message;
+            document.getElementById('quoteSuccess').classList.remove('d-none');
+          } else {
+            err.textContent = (res.data && res.data.error) || 'Something went wrong. Please try again.';
+            err.classList.remove('d-none');
+          }
+        })
+        .catch(function () {
+          err.textContent = 'Network error. Please try again.';
+          err.classList.remove('d-none');
+        })
+        .finally(function () { btn.disabled = false; });
+    });
+  })();
+</script>

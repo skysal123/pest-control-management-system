@@ -40,18 +40,12 @@
                 <label class="form-label">Phone *</label>
                 <input type="tel" name="phone" class="form-control" required value="{{ form.phone or '' }}">
               </div>
-              <div class="col-md-6">
+              <div class="col-12">
                 <label class="form-label">Email</label>
                 <input type="email" name="email" class="form-control" value="{{ form.email or '' }}">
               </div>
-              <div class="col-md-6">
-                <label class="form-label">Service Required</label>
-                <select name="service_id" class="form-select">
-                  <option value="">— Select —</option>
-                  {% for s in services %}
-                    <option value="{{ s.id }}" {% if form.service_id|string == s.id|string %}selected{% endif %}>{{ s.name }}</option>
-                  {% endfor %}
-                </select>
+              <div class="col-12">
+                {% include "partials/_service_picker.html" %}
               </div>
               <div class="col-md-8">
                 <label class="form-label">Address</label>

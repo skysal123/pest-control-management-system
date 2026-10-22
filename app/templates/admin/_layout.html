@@ -1,45 +1,178 @@
-{% extends "base.html" %}
-{% block title %}Admin · {{ business_name }}{% endblock %}
-{% block fabs %}{% endblock %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Admin · {{ business_name }}{% endblock %}</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><text y=%2214%22 font-size=%2214%22>🛡️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}?v={{ asset_version }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/admin.css') }}?v={{ asset_version }}" rel="stylesheet">
+</head>
+<body class="os-admin-body">
 
-{% block content %}
-<div class="container-fluid">
-  <div class="row">
-    <aside class="col-md-3 col-lg-2 os-sidebar">
-      <h6>Admin</h6>
-      <a href="{{ url_for('admin.dashboard') }}" class="{% if request.endpoint=='admin.dashboard' %}active{% endif %}">
-        <i class="bi bi-speedometer2"></i> Dashboard
+<div class="os-admin-shell" id="adminShell">
+  <aside class="os-admin-sidebar" id="adminSidebar" aria-label="Admin navigation">
+    <div class="os-admin-brand">
+      <a href="{{ url_for('admin.dashboard') }}">
+        {% include "partials/_brand.html" %}
       </a>
-      <a href="{{ url_for('admin.leads') }}" class="{% if 'lead' in request.endpoint|default('') %}active{% endif %}">
-        <i class="bi bi-inbox"></i> Leads
-      </a>
-      <a href="{{ url_for('admin.bookings') }}" class="{% if 'booking' in request.endpoint|default('') %}active{% endif %}">
-        <i class="bi bi-calendar-check"></i> Bookings
-      </a>
-      <a href="{{ url_for('admin.technicians') }}" class="{% if 'technician' in request.endpoint|default('') %}active{% endif %}">
-        <i class="bi bi-people"></i> Technicians
-      </a>
-      <a href="{{ url_for('admin.services') }}" class="{% if request.endpoint=='admin.services' %}active{% endif %}">
-        <i class="bi bi-grid"></i> Services
-      </a>
-      <a href="{{ url_for('admin.warranties') }}" class="{% if request.endpoint=='admin.warranties' %}active{% endif %}">
-        <i class="bi bi-shield-check"></i> Warranties
-      </a>
-      <a href="{{ url_for('admin.feedback') }}" class="{% if request.endpoint=='admin.feedback' %}active{% endif %}">
-        <i class="bi bi-star"></i> Feedback
-      </a>
-      <a href="{{ url_for('admin.notifications') }}" class="{% if request.endpoint=='admin.notifications' %}active{% endif %}">
-        <i class="bi bi-bell"></i> Notifications
-      </a>
+    </div>
 
-      <h6 class="mt-4">Site</h6>
-      <a href="{{ url_for('public.home') }}" target="_blank"><i class="bi bi-globe"></i> View Website</a>
-      <a href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a>
-    </aside>
+    <nav class="os-admin-nav">
+      <div class="os-admin-nav-group">
+        <span class="os-admin-nav-title">Manage</span>
+        <a href="{{ url_for('admin.dashboard') }}" class="{% if request.endpoint=='admin.dashboard' %}active{% endif %}">
+          <i class="bi bi-speedometer2"></i> <span class="os-admin-nav-label">Dashboard</span>
+        </a>
+        <a href="{{ url_for('admin.leads') }}" class="{% if 'lead' in request.endpoint|default('') %}active{% endif %}">
+          <i class="bi bi-inbox"></i> <span class="os-admin-nav-label">Leads</span>
+        </a>
+        <a href="{{ url_for('admin.bookings') }}" class="{% if 'booking' in request.endpoint|default('') %}active{% endif %}">
+          <i class="bi bi-calendar-check"></i> <span class="os-admin-nav-label">Bookings</span>
+        </a>
+        <a href="{{ url_for('admin.schedule') }}" class="{% if 'schedule' in request.endpoint|default('') %}active{% endif %}">
+          <i class="bi bi-columns-gap"></i> <span class="os-admin-nav-label">Schedule</span>
+        </a>
+        <a href="{{ url_for('admin.technicians') }}" class="{% if 'technician' in request.endpoint|default('') %}active{% endif %}">
+          <i class="bi bi-people"></i> <span class="os-admin-nav-label">Technicians</span>
+        </a>
+        <a href="{{ url_for('admin.services') }}" class="{% if request.endpoint=='admin.services' %}active{% endif %}">
+          <i class="bi bi-grid"></i> <span class="os-admin-nav-label">Services</span>
+        </a>
+        <a href="{{ url_for('admin.warranties') }}" class="{% if request.endpoint=='admin.warranties' %}active{% endif %}">
+          <i class="bi bi-shield-check"></i> <span class="os-admin-nav-label">Warranties</span>
+        </a>
+        <a href="{{ url_for('admin.feedback') }}" class="{% if request.endpoint=='admin.feedback' %}active{% endif %}">
+          <i class="bi bi-star"></i> <span class="os-admin-nav-label">Feedback</span>
+        </a>
+        <a href="{{ url_for('admin.notifications') }}" class="{% if request.endpoint=='admin.notifications' %}active{% endif %}">
+          <i class="bi bi-bell"></i> <span class="os-admin-nav-label">Notifications</span>
+          {% if admin_unread_count %}<span class="nav-badge">{{ admin_unread_count }}</span>{% endif %}
+        </a>
+      </div>
 
-    <main class="col-md-9 col-lg-10 py-4 px-md-5">
+      <div class="os-admin-nav-group">
+        <span class="os-admin-nav-title">Site</span>
+        <a href="{{ url_for('public.home') }}" target="_blank" rel="noopener">
+          <i class="bi bi-globe"></i> <span class="os-admin-nav-label">View Website</span>
+        </a>
+        <a href="{{ url_for('auth.logout') }}">
+          <i class="bi bi-box-arrow-right"></i> <span class="os-admin-nav-label">Logout</span>
+        </a>
+      </div>
+    </nav>
+
+    <div class="os-admin-sidebar-foot">
+      Signed in as <strong>{{ current_user.name }}</strong>
+    </div>
+  </aside>
+
+  <div class="os-admin-main">
+    <div class="os-admin-utilitybar">
+      <div class="u-group">
+        <a href="mailto:{{ business_email }}"><i class="bi bi-envelope"></i> {{ business_email }}</a>
+        <a href="tel:{{ business_phone }}"><i class="bi bi-telephone"></i> {{ business_phone }}</a>
+      </div>
+      <div class="u-group">
+        <span><i class="bi bi-clock"></i> Mon – Sun · 9:00 AM – 8:00 PM</span>
+      </div>
+    </div>
+
+    <header class="os-admin-topbar">
+      <button class="os-admin-iconbtn os-admin-toggle" type="button" id="adminToggle" aria-label="Open navigation" aria-controls="adminSidebar" aria-expanded="false">
+        <i class="bi bi-list"></i>
+      </button>
+      <button class="os-admin-iconbtn os-admin-desktop-only" type="button" id="adminCollapse" aria-label="Collapse sidebar" aria-controls="adminSidebar">
+        <i class="bi bi-layout-sidebar-inset"></i>
+      </button>
+      <div class="os-admin-topbar-title">{% block page_title %}{{ self.title() }}{% endblock %}</div>
+
+      <div class="os-admin-topbar-actions">
+        <a href="{{ url_for('admin.notifications') }}" class="os-admin-iconbtn os-admin-bell" aria-label="Notifications{% if admin_unread_count %}, {{ admin_unread_count }} unread{% endif %}">
+          <i class="bi bi-bell"></i>
+          {% if admin_unread_count %}<span class="bell-dot">{{ admin_unread_count }}</span>{% endif %}
+        </a>
+        <div class="os-admin-userchip">
+          <div class="who d-none d-sm-block">
+            <strong>{{ current_user.name }}</strong>
+            <small>{{ current_user.role|title }}</small>
+          </div>
+          <div class="os-admin-avatar">{{ current_user.name[:1] }}</div>
+        </div>
+      </div>
+    </header>
+
+    <main class="os-admin-content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, msg in messages %}
+            <div class="alert alert-{{ 'danger' if category=='danger' else ('warning' if category=='warning' else ('info' if category=='info' else 'success')) }} alert-dismissible fade show" role="alert">
+              {{ msg }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
       {% block admin_content %}{% endblock %}
     </main>
   </div>
 </div>
-{% endblock %}
+
+<div class="os-admin-overlay" id="adminOverlay"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+  (function () {
+    var shell = document.getElementById('adminShell');
+    var sidebar = document.getElementById('adminSidebar');
+    var overlay = document.getElementById('adminOverlay');
+    var toggle = document.getElementById('adminToggle');
+    var collapse = document.getElementById('adminCollapse');
+
+    function openDrawer() {
+      sidebar.classList.add('open');
+      overlay.classList.add('show');
+      if (toggle) toggle.setAttribute('aria-expanded', 'true');
+    }
+    function closeDrawer() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
+      if (toggle) toggle.setAttribute('aria-expanded', 'false');
+    }
+
+    if (toggle) {
+      toggle.addEventListener('click', function () {
+        sidebar.classList.contains('open') ? closeDrawer() : openDrawer();
+      });
+    }
+    if (overlay) overlay.addEventListener('click', closeDrawer);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeDrawer();
+    });
+    document.querySelectorAll('.os-admin-nav a').forEach(function (a) {
+      a.addEventListener('click', function () {
+        if (window.innerWidth < 992) closeDrawer();
+      });
+    });
+
+    if (collapse && shell) {
+      if (localStorage.getItem('osAdminCollapsed') === '1') {
+        shell.classList.add('collapsed');
+      }
+      collapse.addEventListener('click', function () {
+        shell.classList.toggle('collapsed');
+        localStorage.setItem('osAdminCollapsed', shell.classList.contains('collapsed') ? '1' : '0');
+      });
+    }
+  })();
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

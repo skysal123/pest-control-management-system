@@ -38,6 +38,12 @@
         <label class="form-label">Icon (Bootstrap-icons class)</label>
         <input type="text" name="icon" class="form-control" value="{{ service.icon if service else 'bi-bug-fill' }}">
       </div>
+      <div class="col-md-4">
+        <label class="form-label">Job duration (minutes)</label>
+        <input type="number" name="estimated_minutes" class="form-control" min="15" step="15"
+               value="{{ service.estimated_minutes if service else 90 }}">
+        <div class="form-text">How long one job of this service blocks a technician.</div>
+      </div>
       {% if service %}
       <div class="col-md-4">
         <label class="form-label">Status</label>

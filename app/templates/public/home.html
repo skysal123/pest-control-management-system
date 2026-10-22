@@ -2,6 +2,55 @@
 {% block title %}Pest Control You Can Trust | {{ business_name }}{% endblock %}
 
 {% block content %}
+<style>
+    .service-banner-card {
+        position: relative;
+        border-radius: var(--os-radius, 16px);
+        overflow: hidden;
+        min-height: 340px;
+        display: flex;
+        align-items: flex-end;
+        box-shadow: var(--os-card-shadow);
+    }
+    .service-banner-card > img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    .service-banner-card:hover > img {
+        transform: scale(1.06);
+    }
+    .service-banner-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(10, 20, 40, 0.15) 0%, rgba(10, 20, 40, 0.55) 55%, rgba(10, 20, 40, 0.85) 100%);
+    }
+    .service-banner-content {
+        position: relative;
+        z-index: 1;
+        padding: 2rem 1.75rem;
+        color: #fff;
+        width: 100%;
+    }
+    .service-banner-content h3 {
+        color: #fff;
+        margin-bottom: 0.5rem;
+        font-size: 1.9rem;
+        font-weight: 800;
+        letter-spacing: -.3px;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, .85), 0 4px 18px rgba(0, 0, 0, .55);
+        -webkit-text-stroke: .5px rgba(0, 0, 0, .35);
+    }
+    .service-banner-content p {
+        color: rgba(255, 255, 255, 0.85);
+        margin-bottom: 1.25rem;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, .55);
+    }
+</style>
 <section class="os-hero">
   <div class="container">
     <div class="row align-items-center g-5">
@@ -20,9 +69,6 @@
           </a>
         </div>
       </div>
-      <div class="col-lg-5 text-center">
-        <div class="display-1">🛡️</div>
-      </div>
     </div>
   </div>
 </section>
@@ -33,6 +79,88 @@
       <h2>Our Services</h2>
       <p>Comprehensive pest control tailored to your needs.</p>
     </div>
+
+    <!-- Service Slider -->
+    <div id="serviceSlider" class="carousel slide" data-bs-ride="carousel">
+      <div class="carousel-inner">
+
+        <!-- Pest Control Services -->
+        <div class="carousel-item active">
+          <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+              <div class="service-banner-card h-100">
+                <img src="{{ url_for('static', filename='images/pests/cockroach-management.jpg', v='20261019') }}" alt="Pest Control Services">
+                <div class="service-banner-content">
+                  <h3>Pest Control Services</h3>
+                  <p>Effective and safe treatments for termites, cockroaches, rodents, and more.</p>
+                  <a href="{{ url_for('public.pest_control_services') }}" class="btn btn-light btn-lg">Explore Pest Control</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cleaning Services -->
+        <div class="carousel-item">
+          <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+              <div class="service-banner-card h-100">
+                <img src="{{ url_for('static', filename='images/cleaning/commercial cleaning.png', v='20261019') }}" alt="Cleaning Services">
+                <div class="service-banner-content">
+                  <h3>Cleaning Services</h3>
+                  <p>Professional house, industrial, and water tank cleaning for a spotless environment.</p>
+                  <a href="{{ url_for('public.cleaning_services') }}" class="btn btn-light btn-lg">Explore Cleaning</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {# Sanitation Services - hidden on frontend
+        <div class="carousel-item">
+          <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6 text-center">
+              <div class="os-card p-5 h-100">
+                <div class="icon-wrap mx-auto mb-4"><i class="bi bi-shield-shaded" style="font-size: 3rem; color: var(--os-primary);"></i></div>
+                <h3>Sanitation Services</h3>
+                <p class="text-muted mb-4">Complete disinfection and sanitation services to keep your space healthy.</p>
+                <a href="{{ url_for('public.services') }}" class="btn btn-primary btn-lg">Explore Sanitation</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        #}
+
+        <!-- Bird Netting Services -->
+        <div class="carousel-item">
+          <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+              <div class="service-banner-card h-100">
+                <img src="{{ url_for('static', filename='images/netting/society bird netting.jpg', v='20261019') }}" alt="Bird Netting Services">
+                <div class="service-banner-content">
+                  <h3>Bird Netting Services</h3>
+                  <p>Durable and transparent bird netting installations for homes and industries.</p>
+                  <a href="{{ url_for('public.bird_netting_services') }}" class="btn btn-light btn-lg">Explore Bird Netting</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Slider Controls -->
+      <button class="carousel-control-prev" type="button" data-bs-target="#serviceSlider" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true" style="filter: invert(1);"></span>
+        <span class="visually-hidden">Previous</span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#serviceSlider" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true" style="filter: invert(1);"></span>
+        <span class="visually-hidden">Next</span>
+      </button>
+    </div>
+
+    {#
     <div class="row g-4">
       {% for s in services %}
       {% set s_image = s.image or ('services/' ~ s.slug ~ '.webp') %}
@@ -60,6 +188,7 @@
       <div class="col-12 text-center text-muted">No services available right now.</div>
       {% endfor %}
     </div>
+    #}
   </div>
 </section>
 
@@ -69,33 +198,33 @@
       <h2>Why Choose Us</h2>
       <p>Trusted by hundreds of households and businesses.</p>
     </div>
-    <div class="row g-4">
+    <div class="row g-4 os-reveal-group">
       <div class="col-md-6 col-lg-3">
-        <div class="os-card p-4 text-center h-100">
+        <div class="os-card os-why-card tone-blue p-4 text-center h-100" data-reveal="left">
           <div class="icon-wrap mx-auto mb-3"><i class="bi bi-award-fill"></i></div>
           <h6>Certified Experts</h6>
-          <p class="small text-muted mb-0">Licensed technicians with industry-grade training.</p>
+          <p class="small mb-0">Licensed technicians with industry-grade training.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-3">
-        <div class="os-card p-4 text-center h-100">
+        <div class="os-card os-why-card tone-green p-4 text-center h-100" data-reveal="right">
           <div class="icon-wrap mx-auto mb-3"><i class="bi bi-shield-fill-check"></i></div>
           <h6>Safe Treatments</h6>
-          <p class="small text-muted mb-0">Pet- and child-safe chemicals, odour-controlled.</p>
+          <p class="small mb-0">Pet- and child-safe chemicals, odour-controlled.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-3">
-        <div class="os-card p-4 text-center h-100">
+        <div class="os-card os-why-card tone-amber p-4 text-center h-100" data-reveal="left">
           <div class="icon-wrap mx-auto mb-3"><i class="bi bi-arrow-repeat"></i></div>
           <h6>Warranty Backed</h6>
-          <p class="small text-muted mb-0">Up to {{ warranty_days }}-day warranty on every service.</p>
+          <p class="small mb-0">Up to {{ warranty_days }}-day warranty on every service.</p>
         </div>
       </div>
       <div class="col-md-6 col-lg-3">
-        <div class="os-card p-4 text-center h-100">
+        <div class="os-card os-why-card tone-violet p-4 text-center h-100" data-reveal="right">
           <div class="icon-wrap mx-auto mb-3"><i class="bi bi-headset"></i></div>
           <h6>24/7 Support</h6>
-          <p class="small text-muted mb-0">Reach us anytime on phone, WhatsApp, or email.</p>
+          <p class="small mb-0">Reach us anytime on phone, WhatsApp, or email.</p>
         </div>
       </div>
     </div>
@@ -130,9 +259,14 @@
   <div class="container">
     <h2 class="mb-2">Ready for a pest-free space?</h2>
     <p class="lead mb-4">Book a service today and let our experts handle the rest.</p>
-    <a href="{{ url_for('public.contact') }}" class="btn btn-light btn-lg">
-      <i class="bi bi-clipboard-check"></i> Enquire Now
-    </a>
+    <div class="d-flex gap-2 justify-content-center flex-wrap">
+      <a href="{{ url_for('public.get_started', mode='book') }}" class="btn btn-light btn-lg">
+        <i class="bi bi-calendar-check"></i> Book Now
+      </a>
+      <a href="{{ url_for('public.get_started', mode='enquire') }}" class="btn btn-outline-light btn-lg">
+        <i class="bi bi-clipboard-check"></i> Enquire Now
+      </a>
+    </div>
   </div>
 </section>
 {% endblock %}

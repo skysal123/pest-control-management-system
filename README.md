@@ -36,12 +36,127 @@ Service completion  →  Customer feedback  →  Warranty tracking  →  Renewal
 - Job detail with customer info, address, service details
 - Accept / start / complete actions with optional service notes
 
-### Notifications (Phase 1 — email)
-- Booking confirmed → email to customer + in-app to admins
-- Technician assigned → email + in-app to technician
-- Service completed → thank-you email with feedback link
+### Notifications
+- Booking confirmed → email + WhatsApp to the customer, in-app + WhatsApp to admins
+- New enquiry (contact / quote / get-started form) → in-app + WhatsApp to admins
+- Technician assigned → email + WhatsApp to the technician
+- Service completed → thank-you email + WhatsApp feedback link
 - Warranty reminder → email to customer + in-app to admins
   (driven by `warranty.scan_and_notify(app)` — designed to run daily via cron)
+
+### Notification layer — `notifications.py`
+Every event fans out over the same four channels: **in-app** (bell + unread
+badge in the admin portal), **WhatsApp**, **email**, and — where it makes
+sense — a **customer acknowledgement**.
+
+| Event | In-app | WhatsApp | Email | Customer |
+|---|---|---|---|---|
+| New enquiry (`/contact`, `/get-started`, `/quote`, admin) | admins | admins | admins | acknowledgement |
+| New booking request (website) | admins | admins | admins | – |
+| New booking created in the admin panel | admins | admins | admins | – |
+| Booking confirmed / assigned | admins | admins | – | "appointment booked" |
+| Technician assigned | technician | technician | technician | – |
+| Enquiry assigned to technician | technician | technician | – | – |
+| Service completed | admins | – | – | thank-you + feedback link |
+| Warranty expiring | admins | – | customer | – |
+
+Entry points in `notifications.py`:
+
+```python
+notify_new_enquiry(lead)             # admins + customer acknowledgement
+notify_new_booking(booking)           # admins (customer is messaged on confirm)
+notify_booking_created(booking)       # on confirm/assign - also messages the customer
+notify_technician_assigned(booking)
+notify_lead_assigned(lead)
+notify_service_completed(booking)
+notify_warranty_reminder(booking, days_left)
+```
+
+Helpers: `notify_admins()`, `notify_users()`, `email_admins()`,
+`whatsapp_admins()`, `inapp_notify()`.
+
+> In-app notifications are **committed** by the layer, so they survive the
+> request. A message that could not be delivered (e.g. WhatsApp rejected) is
+> recorded as a `whatsapp_failed` entry so the admin can act on it.
+
+> All sends are **best effort** — a failing channel never breaks the enquiry
+> or the booking. Email is skipped with a clear log line while the `.env`
+> still holds the placeholder Gmail credentials.
+
+### WhatsApp (Twilio) — `whatsapp.py`
+- **Customer message:** when an admin confirms a booking, the customer receives an
+  "your appointment is booked" WhatsApp (service, date, booking ref, address and
+  the business WhatsApp number). The recipient is the number the customer typed
+  into the enquiry form.
+- **Admin alerts:** new enquiry / new booking are pushed to every number in
+  `ADMIN_WHATSAPP` plus every admin's own "WhatsApp" field.
+- **Delivery is verified:** Twilio only reports a message as *queued*, so the
+  delivery status is polled right after the send. A failed send shows the
+  reason in the admin UI (e.g. "recipient never started the conversation") and
+  is also recorded as an in-app notification.
+- **Manual resend:** the booking page has a "Send 'Appointment Booked' WhatsApp"
+  button for the cases the API cannot deliver.
+
+> **Trial-account limits (read this before going live)**
+> The configured Twilio account is a **trial** account using the shared sandbox
+> number `+1 415 523 8886`, so:
+> - a message only reaches a number that has sent `join <your sandbox keyword>`
+>   to the sandbox (the keyword is on the *Twilio Console → WhatsApp Sandbox*
+>   page - copy it into `TWATSAPP_SANDBOX_JOIN_KEYWORD` and the admin panel
+>   will tell the customer exactly what to send);
+> - a sandbox session **expires after 3 days**, so the customer must rejoin;
+> - the sender shown to the customer is the Twilio sandbox, **not** your number.
+> - a trial account may send only **50 messages per day** (Twilio error 63038
+>   when the limit is hit - the admin panel says so explicitly).
+>
+> Twilio does not sell Indian numbers, so the sandbox can never show
+> 9975171729 as the sender.
+
+### Going live with 9975171729 as the sender (Twilio Self Sign-up)
+
+Twilio supports **Bring Your Own Number** for WhatsApp, so your own number can
+become a real WhatsApp sender — no aggregator needed:
+
+1. **Upgrade the Twilio account** from Trial to a paid plan.
+2. Console → **Messaging → Senders → WhatsApp Senders → Create new sender**.
+3. Choose **"Non-Twilio phone number"** and enter `+91 99751 71729`.
+   - The number must be able to receive an SMS or voice OTP.
+   - It must **not** already be registered on WhatsApp. If the WhatsApp
+     Business App is currently running on it, deregister that number first
+     (Twilio: *"Can I move my approved WhatsApp Number to Twilio?"*).
+4. **Continue with Facebook** → create (or select) a **Meta Business
+   Portfolio** and a **WABA**. Complete Meta business verification before you
+   need production limits (unverified: max 2 senders, 50 business-initiated
+   conversations per sender per 24h).
+5. Verify the number with the OTP, then wait for Meta to approve the display
+   name.
+6. In this project set:
+   ```env
+   TWILIO_WHATSAPP_FROM=whatsapp:+919975171729
+   ```
+7. **Create an approved template.** Outside the 24-hour customer service
+   window WhatsApp only allows pre-approved templates. In the Console go to
+   **Messaging → Content Template Builder**, create a template such as
+   `appointment_booked` with body placeholders `{{1}}`..`{{6}}`, and submit it
+   for approval. Then set:
+   ```env
+   TWILIO_CONTENT_SID=HXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   WHATSAPP_TEMPLATE_APPOINTMENT=appointment_booked
+   ```
+   The variables are filled automatically: `{{1}}` customer name,
+   `{{2}}` service, `{{3}}` date & time, `{{4}}` booking reference,
+   `{{5}}` address, `{{6}}` business WhatsApp number.
+8. Free-form messages (no template) keep working **inside** the 24-hour
+   window, i.e. when the customer messages you first. If a free-form send is
+   rejected with error 63016, the app automatically retries with the approved
+   template.
+
+### Manual fallback (works today, no API needed)
+
+If the API cannot deliver (sandbox, or the customer has not joined), the
+booking page has an **"Open WhatsApp & send"** button. It opens WhatsApp with
+the complete appointment message pre-filled, so you tap *send* from your own
+phone and the customer receives it from **9975171729**.
 
 ### Warranty Management (Section 13)
 - Every completed booking gets a configurable warranty (default 90 days)
@@ -78,7 +193,8 @@ OneStepMultiservices/
 ├── models.py                # SQLAlchemy models for all 7 tables + WarrantyReminder
 ├── extensions.py            # db / login_manager / mail singletons
 ├── config.py                # Env-driven config (mail, business, warranty)
-├── notifications.py         # Email + in-app notification helpers
+├── notifications.py         # Email + in-app + WhatsApp notification helpers
+├── whatsapp.py              # WhatsApp sender (Twilio) + phone helpers
 ├── warranty.py              # Daily reminder scanner + dashboard helpers
 ├── seed.py                  # Initial admin + technicians + services
 ├── run.py                   # Entry point: `python run.py`
@@ -184,14 +300,28 @@ Add a daily cron entry on the host:
 | `DATABASE_URL` | `sqlite:///instance/onestep.db` | SQLAlchemy URI (SQLite or Postgres) |
 | `MAIL_SERVER` / `MAIL_PORT` | `smtp.gmail.com` / `587` | SMTP |
 | `MAIL_USERNAME` / `MAIL_PASSWORD` | — | SMTP credentials |
-| `BUSINESS_NAME` / `BUSINESS_PHONE` / `BUSINESS_EMAIL` / `BUSINESS_WHATSAPP` / `BUSINESS_ADDRESS` | — | Used in templates/emails |
+| `BUSINESS_NAME` / `BUSINESS_PHONE` / `BUSINESS_EMAIL` / `BUSINESS_WHATSAPP` / `BUSINESS_ADDRESS` | — | Used in templates/emails and in the customer WhatsApp message |
 | `WARRANTY_DAYS` | `90` | Length of service warranty |
 | `WARRANTY_REMINDER_DAYS_BEFORE` | `7` | First reminder offset before expiry (also sends at 1 day) |
+| `WHATSAPP_ENABLED` | `true` | Master switch for WhatsApp sends |
+| `WHATSAPP_PROVIDER` | `twilio` | `twilio` or `none` (dry run) |
+| `WHATSAPP_CUSTOMER_MESSAGES` | `true` | Send the "appointment booked" message to the customer |
+| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` | — | Twilio credentials |
+| `TWILIO_WHATSAPP_FROM` | `whatsapp:+14155238886` | Sender (sandbox number on a trial account) |
+| `TWILIO_CONTENT_SID` | — | Approved template SID (needed for business-initiated messages) |
+| `WHATSAPP_TEMPLATE_APPOINTMENT` | — | Name of the approved template for the customer message |
+| `TWATSAPP_SANDBOX_JOIN_KEYWORD` | — | Sandbox join keyword, used in the opt-in instructions |
+| `ADMIN_WHATSAPP` | — | Comma-separated numbers that receive admin alerts |
+| `NOTIFY_ADMIN_EMAIL` | `true` | Email the admins on every new enquiry / booking |
+| `ADMIN_EMAIL` | — | Where admin notification emails go (defaults to `BUSINESS_EMAIL`) |
+| `NOTIFY_CUSTOMER_ACK` | `true` | Acknowledge the customer when they raise an enquiry |
+| `CUSTOMER_ACK_CALLBACK_MINUTES` | `60` | Callback window quoted in the acknowledgement |
+| `DEFAULT_COUNTRY_CODE` | `91` | Country code used to normalise 10-digit local numbers |
+| `BOOKING_REF_PREFIX` | `SPMS` | Prefix of the booking reference sent to customers |
 
 ---
 
 ## Future enhancements (built-in roadmap)
-- WhatsApp Business API integration
 - Online payments (Razorpay / Stripe)
 - Invoice generation
 - Customer login portal
